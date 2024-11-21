@@ -1,7 +1,28 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def ula_steering_vectors(num_elements:list, element_spacing:float, angular_resolution:float = None, num_st_vecs:int = None):
+def ula_steering_matrix(num_elements:int, element_spacing:float, thetas_rad: list[float]):
+    """
+    This function prepares steering vectors for ULA antenna systems
+        
+    Parameters:
+        :param num_elements (int): number of ULA antenna elements.
+        :param element_spacing (float): interelement spacing as fraction of a wavelength
+        :param thetas_rad ([float]): angles (in radians) for which set of steering column vectors is generated
+        
+    Return values:
+        :return A : steering matrix
+        :rtype A: 2D numpy array with size: M x K, where M is the number of array elements, and where K is the number of signals
+        
+    """
+    
+    M,d = num_elements, element_spacing
+    elems = np.arange(M).reshape(-1,1)
+    A = np.exp(-1j * 2 * np.pi * d * elems @ np.sin(thetas_rad)) # (M x K)
+
+    return A
+
+def ula_scan_steering_matrix(num_elements:int, element_spacing:float, angular_resolution:float = None, num_st_vecs:int = None):
     """
     This function prepares steering vectors for ULA antenna systems
         
@@ -13,7 +34,7 @@ def ula_steering_vectors(num_elements:list, element_spacing:float, angular_resol
         
     Return values:
         :return steering_vectors : Estimated signal dimension
-        :rtype steering_vectors: 2D numpy array with size: M x P, where P is the number of scanning angles
+        :rtype A: 2D numpy array with size: M x P, where M is the number of array elements, and where P is the number of scanning angles
         
     """
     if angular_resolution and num_st_vecs:
@@ -26,25 +47,40 @@ def ula_steering_vectors(num_elements:list, element_spacing:float, angular_resol
     return np.exp(-1j *2* np.pi * d * arr_alignment @ np.sin(scan_thetas_rad))
 
 
-def DOA_plot(DOA_data:list, inc_angs:list[int], labels:list[np.ndarray]=[], polar=False, fullView=False, log_scale=True, normalize=True):
+def DOA_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
+    """
+    This plotting function takes in a number of spectrums from various methods (e.g. CAPON and MUSIC) and linearly plots DOA estimates and actual DOAs
+        
+    Parameters:
+        :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations.
+        :param inc_angs ([float]): originating angles (in deg) of sources used for validation of estimates
+        :param labels ([str]): labels for legend in plot to map spectrum to algorithm which generated it
+        :param fullView (bool): True: plot angles b/w [-180,180] degrees, else [-90,90] degrees
+        :param log_scale (bool): True: plot spectra y values in dB, else watts
+        :param normalize (bool): True: subtract max spectrum y value from all spectrum y values
+        
+    """    
     # Input check
-    if not isinstance(DOA_data,list):
-      raise TypeError("DOA_data must be Python list")
+    if not isinstance(spectra_data,list):
+      raise TypeError("spectra_data must be Python list")
 
-    if len(DOA_data) != len(labels):
-      raise TypeError("Number of DOA_data and labels must be equal")
+    if any((ang < -180) or (ang > 180) for ang in inc_angs):
+      raise TypeError("Incident angles range is b/w [-180,180] degrees")
+
+    if len(spectra_data) > 1 and len(spectra_data) != len(labels):
+      raise TypeError("Number of spectra_data and labels must be equal")
 
     # Preprocess and format
-    DOA_data = np.concatenate(DOA_data,axis=0)
+    spectra_data = np.concatenate(spectra_data,axis=0)
 
     if(log_scale == True):
-      DOA_data = 10*np.log10(DOA_data)
+      spectra_data = 10*np.log10(spectra_data)
 
     if(normalize == True):
-      DOA_data = (DOA_data.T - np.max(DOA_data, axis = 1)).T
+      spectra_data = (spectra_data.T - np.max(spectra_data, axis = 1)).T
     
-    # angular_resolution based on count of DOA_data (Power Angular Density) measurements
-    r = 360.0/(len(DOA_data[0,:]) - 1 )
+    # angular_resolution based on count of spectra_data spectrum measurements
+    r = 360.0/(len(spectra_data[0,:]) - 1 )
 
     scan_thetas_deg = np.arange(-180, 180 + r, r)
 
@@ -52,48 +88,14 @@ def DOA_plot(DOA_data:list, inc_angs:list[int], labels:list[np.ndarray]=[], pola
       left_idx = np.argmin(np.abs(scan_thetas_deg - (-90)))
       right_idx = np.argmin(np.abs(scan_thetas_deg - 90))
       scan_thetas_deg = scan_thetas_deg[left_idx:right_idx+1]
-      DOA_data = DOA_data[:,left_idx:right_idx+1]
-
-    extrema_thetas_deg = scan_thetas_deg[np.argmax(DOA_data,axis = 1)]
-    extrema_thetas_deg = np.round(extrema_thetas_deg, decimals=1)
-    extremas = np.max(DOA_data, axis = 1)
+      spectra_data = spectra_data[:,left_idx:right_idx+1]
 
     #Plot DOA results
-    if(polar == True):
-        fig, axes = plt.subplots(subplot_kw={'projection': 'polar'})
-        
-        for i in range(DOA_data.shape[0]):
-            axes.plot(np.deg2rad(scan_thetas_deg), DOA_data[i,:].squeeze(),label=labels[i]) # MAKE SURE TO USE RADIAN FOR POLAR
-
-            ith_sig_DOA_ext_deg = np.deg2rad(extrema_thetas_deg[i])
-            ith_sig_DOA_ext = extrema_thetas_deg[i]
-            axes.annotate(ith_sig_DOA_ext_deg, xy=(ith_sig_DOA_ext_deg, ith_sig_DOA_ext)) # Annotate best DOA estimate
-        
-        # Mark source(s) actual DOAs
-        for ang in inc_angs:
-            axes.axvline(linewidth = 2,color = 'green',x = np.deg2rad(ang))
-
-        axes.set_theta_zero_location('N') # make 0 degrees point up
-        axes.set_theta_direction(-1) # increase clockwise
-        axes.set_rlabel_position(55)  # Move grid labels away from other labels
-        
-        if fullView == False:
-            axes.set_thetamin(-90) # only show top half
-            axes.set_thetamax(90)
-        plt.legend()
-        plt.grid()
-        plt.show()
-        return 
-
     fig = plt.figure()
     axes  = fig.add_subplot(111)
-    for i in range(DOA_data.shape[0]):
-        axes.plot(scan_thetas_deg, DOA_data[i,:].squeeze(),label=labels[i]) # MAKE SURE TO USE RADIAN FOR POLAR
-        
-        ith_sig_DOA_ext_deg = extrema_thetas_deg[i]
-        ith_sig_DOA_ext = extrema_thetas_deg[i]
-        axes.annotate(ith_sig_DOA_ext_deg, xy=(ith_sig_DOA_ext_deg, ith_sig_DOA_ext)) # Annotate best DOA estimate
-        
+    for i in range(spectra_data.shape[0]):
+        axes.plot(scan_thetas_deg, spectra_data[i,:].squeeze(),label=labels[i])
+
     axes.set_title('Direction of Arrival estimation ',fontsize = 16)
     axes.set_xlabel('Incident angle [deg]')
     axes.set_ylabel('Amplitude [watt]')
@@ -103,11 +105,80 @@ def DOA_plot(DOA_data:list, inc_angs:list[int], labels:list[np.ndarray]=[], pola
     # Mark source(s) actual DOAs
     for ang in inc_angs:
         axes.axvline(linewidth = 2,color = 'green',x = ang)
+
     plt.legend()
     plt.grid()
     plt.show()
-    print(extrema_thetas_deg.squeeze())
    
+def DOA_polar_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
+    """
+    This plotting function takes in a number of spectrums from various methods (e.g. CAPON and MUSIC) and radially plots DOA estimates and actual DOAs
+        
+    Parameters:
+        :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations.
+        :param inc_angs ([float]): originating angles (in deg) of sources used for validation of estimates
+        :param labels ([str]): labels for legend in plot to map spectrum to algorithm which generated it
+        :param fullView (bool): True: plot angles b/w [-180,180] degrees, else [-90,90] degrees
+        :param log_scale (bool): True: plot spectra y values in dB, else watts
+        :param normalize (bool): True: subtract max spectrum y value from all spectrum y values
+    """    
+    # Input check
+    if not isinstance(spectra_data,list):
+      raise TypeError("spectra_data must be Python list")
+
+    if any((ang < -180) or (ang > 180) for ang in inc_angs):
+      raise TypeError("Incident angles range is b/w [-180,180] degrees")
+
+    if len(spectra_data) > 1 and len(spectra_data) != len(labels):
+      raise TypeError("Number of spectra_data and labels must be equal")
+
+    # Preprocess and format
+    spectra_data = np.concatenate(spectra_data,axis=0) # (S x P) 
+
+    if(log_scale == True):
+      spectra_data = 10*np.log10(spectra_data)
+
+    if(normalize == True):
+      spectra_data = (spectra_data.T - np.max(spectra_data, axis = 1)).T
+    
+    # angular_resolution based on count of spectra_data spectrum measurements
+    r = 360.0/(len(spectra_data[0,:]) - 1 )
+
+    scan_thetas_deg = np.arange(-180, 180 + r, r)
+
+    if fullView == False:
+      left_idx = np.argmin(np.abs(scan_thetas_deg - (-90)))
+      right_idx = np.argmin(np.abs(scan_thetas_deg - 90))
+      scan_thetas_deg = scan_thetas_deg[left_idx:right_idx+1]
+      spectra_data = spectra_data[:,left_idx:right_idx+1]
+
+    #Plot DOA results
+    fig, axes = plt.subplots(subplot_kw={'projection': 'polar'})
+    
+    for i in range(spectra_data.shape[0]):
+        axes.plot(np.deg2rad(scan_thetas_deg), spectra_data[i,:].squeeze(),label=labels[i]) # MAKE SURE TO USE RADIAN FOR POLAR
+
+    axes.set_title('Direction of Arrival estimation ',fontsize = 16)
+    axes.set_xlabel('Incident angle [deg]')
+    axes.set_ylabel('Amplitude [watt]')
+    if(log_scale == True):
+        axes.set_ylabel('Amplitude [dB]')
+            
+    # Mark source(s) actual DOAs
+    for ang in inc_angs:
+        axes.axvline(linewidth = 2,color = 'green',x = np.deg2rad(ang))
+
+    axes.set_theta_zero_location('N') # make 0 degrees point up
+    axes.set_theta_direction(-1) # increase clockwise
+    axes.set_rlabel_position(55)  # Move grid labels away from other labels
+    
+    if fullView == False:
+        axes.set_thetamin(-90) # only show top half
+        axes.set_thetamax(90)
+    plt.legend()
+    plt.grid()
+    plt.show()
+
 
 # TODO: steering vec gen dependent on ULA geometry, generalize
 """ 
