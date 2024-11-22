@@ -16,13 +16,6 @@ class BartlettBeamformer(DOAEstimator):
         return steering_vectors
         
     def calculate_spectrum(R, steering_vectors, **kwargs):
-        # --> Input check
-        if R.shape[0] != R.shape[1]:
-            raise TypeError("Covariance matrix is not square")
-
-        if R.shape[0] != steering_vectors.shape[0]:
-            raise TypeError("Covariance matrix dimension does not match with the antenna array dimension")
-      
         s = steering_vectors
         PAD = s.conj().T @ R @ s # (P x P)
         PAD = np.diag(PAD) # (P,)
