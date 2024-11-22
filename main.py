@@ -57,7 +57,7 @@ soi = power @ soi # (K x K) @ (K x N)
 
 A = ula_steering_matrix(M,d,thetas_rad) # (M x K)
 
-soi_matrix = A @ soi # (M x K) @ (K x N) = (M x N)
+steered_soi_matrix = A @ soi # (M x K) @ (K x N) = (M x N)
 
 # Generate multichannel uncorrelated noise
 """
@@ -75,7 +75,7 @@ noise = np.random.randn(M,N) + 1j*np.random.randn(M,N)
 noise = 0.5 * noise # split between Re and Im components.
 
 # Create received signal
-tx_signal = soi_matrix + noise
+tx_signal = steered_soi_matrix + noise
 
 # R matrix calculation
 # outside lib methds to allow different ways of calculating and augmenting
@@ -85,11 +85,11 @@ R = (tx_signal @ tx_signal.conj().T)/tx_signal.shape[1]
 ula_st_vectors = ula_scan_steering_matrix(M,0.5,angular_resolution=1)
 
 # DOA estimation
-estimates,Bartlett_PAD = BartlettBeamformer.estimate_doa(R, ula_st_vectors)
+estimates,Bartlett_PAD = BartlettBeamformer.estimate_doa(R, ula_st_vectors, K)
 print("Bartlett_PAD estimates", estimates)
-estimates,Capon_PAD = CaponBeamformer.estimate_doa(R, ula_st_vectors)
+estimates,Capon_PAD = CaponBeamformer.estimate_doa(R, ula_st_vectors, K)
 print("Capon_PAD estimates", estimates)
-estimates,MUSIC_ORTAD = MUSIC.estimate_doa(R, ula_st_vectors)
+estimates,MUSIC_ORTAD = MUSIC.estimate_doa(R, ula_st_vectors, K)
 print("MUSIC_ORTAD estimates", estimates)
 
 DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC"])
@@ -117,7 +117,7 @@ soi = np.random.randn(K, N)   # Signal(s) of Interest
 elems = np.arange(M).reshape(-1,1)
 a = np.exp(-1j * 2 * np.pi * d * elems @ np.sin(thetas_rad)) # (M x K)
 
-soi_matrix = a @ soi # (M x K) @ (K x N) = (M x N)
+steered_soi_matrix = a @ soi # (M x K) @ (K x N) = (M x N)
 
 # Generate multichannel uncorrelated noise
 """
@@ -134,7 +134,7 @@ We can do this because AWGN with a phase shift applied is still AWGN.
 noise = np.random.normal(0,np.sqrt(1),(M,N)) + 1j*np.random.normal(0,np.sqrt(1),(M,N))
 
 # Create received signal
-tx_signal = soi_matrix + noise
+tx_signal = steered_soi_matrix + noise
 
 # R matrix calculation
 # outside lib methds to allow different ways of calculating and augmenting
@@ -167,7 +167,7 @@ soi = np.repeat(soi,K,axis=0)
 elems = np.arange(M).reshape(-1,1)
 a = np.exp(-1j * 2 * np.pi * d * elems @ np.sin(thetas_rad)) # (M x K)
 
-soi_matrix = a @ soi # (M x K) @ (K x N) = (M x N)
+steered_soi_matrix = a @ soi # (M x K) @ (K x N) = (M x N)
 
 # Generate multichannel uncorrelated noise
 """
@@ -184,7 +184,7 @@ We can do this because AWGN with a phase shift applied is still AWGN.
 noise = np.random.normal(0,np.sqrt(1),(M,N)) + 1j*np.random.normal(0,np.sqrt(1),(M,N))
 
 # Create received signal
-tx_signal = soi_matrix + noise
+tx_signal = steered_soi_matrix + noise
 
 # R matrix calculation
 # outside lib methds to allow different ways of calculating and augmenting
