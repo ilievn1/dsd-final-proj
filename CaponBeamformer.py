@@ -1,9 +1,10 @@
 from .doaestimator import DOAEstimator
 import numpy as np
+from scipy import linalg
 
 class CaponBeamformer(DOAEstimator):
-
-    def calculate_weight_matrix(steering_vectors,**kwargs):
+    @classmethod
+    def calculate_weight_matrix(cls,steering_vectors,**kwargs):
         """
         Parameters:
             :param steering_vectors : Generated using the array alignment and the incident angles
@@ -35,7 +36,8 @@ class CaponBeamformer(DOAEstimator):
         w_matrix = (R_inv @ s)/np.diag(s.conj().T @ R_inv @ s) # (M x M) * (M x P), denominator is (P x M) * (M x M) * (M x P), resulting in a (M x P) weights vector
         return w_matrix
     
-    def calculate_spectrum(R, steering_vectors, **kwargs):
+    @classmethod
+    def calculate_spectrum(cls, R, steering_vectors, **kwargs):
         s = steering_vectors
         M = steering_vectors.shape[0]
 

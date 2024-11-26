@@ -3,7 +3,8 @@ import numpy as np
 
 class MUSIC(DOAEstimator):
 
-    def calculate_spectrum(self, R, steering_vectors, **kwargs):
+    @classmethod
+    def calculate_spectrum(cls, R, steering_vectors, **kwargs):
         K = kwargs.get("K", None)
         assert K is not None
         

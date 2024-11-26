@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import matplotlib.pyplot as plt
 
+from abc import ABC, abstractmethod
 class DOAEstimator(ABC):
     """
     Abstract base class for DOA estimation algorithms.
@@ -26,8 +27,9 @@ class DOAEstimator(ABC):
         self.signal = signal
 
 
+    @classmethod
     @abstractmethod
-    def calculate_spectrum(self, R, steering_vectors, **kwargs):
+    def calculate_spectrum(cls, R, steering_vectors, **kwargs):
         """
         Parameters:
             :param R: spatial covariance matrix
@@ -42,6 +44,7 @@ class DOAEstimator(ABC):
             :return spectrum: spectrum (e.g. angular distribution of pwr or noise subspace orthogonality)
             :rtype spectrum: 1D ndarray (P,)
         """
+        print(f'Inside @classmethod calculate_spectrum with cls ${cls}')
         # --> Input check
         if R.shape[0] != R.shape[1]:
             raise TypeError("Covariance matrix is not square")
@@ -51,7 +54,8 @@ class DOAEstimator(ABC):
         
         pass
 
-    def estimate_doa(self, R, steering_vectors, K):
+    @classmethod
+    def estimate_doa(cls, R, steering_vectors, K):
         """
         Parameters:
             :param R: spatial covariance matrix
@@ -68,6 +72,7 @@ class DOAEstimator(ABC):
             :rtype DOA: [float]
             :rtype spectrum: 1D ndarray (P,)
         """
+        print(f'Inside @classmethod estimate_doa with cls ${cls}')
         # --> Input check
         if R.shape[0] != R.shape[1]:
             raise TypeError("Covariance matrix is not square")
@@ -77,7 +82,7 @@ class DOAEstimator(ABC):
 
         s = steering_vectors
 
-        spectrum =self.calculate_spectrum(R, s, K)
+        spectrum = cls.calculate_spectrum(R, s, K=K)
         r = 360.0/(len(spectrum) - 1 )
         scan_thetas_deg = np.arange(-180, 180 + r, r)
         

@@ -3,11 +3,12 @@ import numpy as np
 from .utils import *
 
 class RMUSIC(DOAEstimator):
-
-    def calculate_spectrum(self, R, steering_vectors, **kwargs):
+    @classmethod
+    def calculate_spectrum(cls, R, steering_vectors, **kwargs):
         raise TypeError("Non-spectrum method")
 
-    def estimate_doa(self, R, steering_vectors, K):
+    @classmethod
+    def estimate_doa(cls, R, steering_vectors, K):
         """
         Parameters:
             :param R: spatial covariance matrix
@@ -32,6 +33,7 @@ class RMUSIC(DOAEstimator):
             raise TypeError("Covariance matrix dimension does not match with the antenna array dimension")
 
         _, U = np.linalg.eigh(R)
+
         # Eigenvalues are sorted in ascending order.
         U_n = U[:,:-K] # (M x (M - K))
 
@@ -39,12 +41,19 @@ class RMUSIC(DOAEstimator):
 
         pol_coef = sum_across_diagonals(R_n)
         roots = np.roots(pol_coef)
+        print("roots of pol_coef", roots)
+        print("est w/o filtering roots inside UN", np.rad2deg(np.arcsin(-1/(2*np.pi*0.5)*np.angle(roots))))
 
         roots_inside_UC = roots[np.abs(roots) < 1]
+        
         # Sort roots in asc order according to UC proximity
         roots_inside_UC = roots_inside_UC[np.argsort(np.abs(np.abs(roots_inside_UC)-1))]
-
-        estimated_DOAs = np.arcsin(-1/(2*np.pi*0.5)*np.arg(roots))
-        estimated_DOAs = np.rad2deg(estimated_DOAs)
+        print("roots_inside_UC", roots_inside_UC)
+        
+        roots_inside_UC = roots_inside_UC[:K]
+        print("roots_inside_UC after filter K most probable", roots_inside_UC)
+        # TODO: Here 0.5 = d, is magic number, when DOA ABC is fully implemented, d should be accesible thru parent ABC
+        estimated_DOAs = np.arcsin(-1/(2*np.pi*0.5)*np.angle(roots_inside_UC))
+        estimated_DOAs = np.rad2deg(estimated_DOAs).tolist()
 
         return estimated_DOAs, None

@@ -2,8 +2,8 @@ from .doaestimator import DOAEstimator
 import numpy as np
 
 class BartlettBeamformer(DOAEstimator):
-
-    def calculate_weight_matrix(steering_vectors):
+    @classmethod
+    def calculate_weight_matrix(cls, steering_vectors, **kwargs):
         """
         Parameters:
             :param steering_vectors : Generated using the array alignment and the incident angles
@@ -14,14 +14,15 @@ class BartlettBeamformer(DOAEstimator):
 
         """        
         return steering_vectors
-        
-    def calculate_spectrum(R, steering_vectors, **kwargs):
+
+    @classmethod    
+    def calculate_spectrum(cls, R, steering_vectors, **kwargs):
         s = steering_vectors
         PAD = s.conj().T @ R @ s # (P x P)
         PAD = np.diag(PAD) # (P,)
 
         return PAD
-
+    
     def calculate_mse(self, s, s_hat, plot=False):
         """
         Parameters:
