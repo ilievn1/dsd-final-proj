@@ -17,8 +17,8 @@ def ula_steering_matrix(num_elements:int, element_spacing:float, thetas_rad: lis
     """
     
     M,d = num_elements, element_spacing
-    elems = np.arange(M).reshape(-1,1)
-    A = np.exp(-1j * 2 * np.pi * d * elems @ np.sin(thetas_rad)) # (M x K)
+    arr_alignment = np.arange(M).reshape(-1,1)
+    A = np.exp(-1j * 2 * np.pi * d * arr_alignment @ np.sin(thetas_rad)) # (M x K)
 
     return A
 
@@ -40,21 +40,22 @@ def ula_scan_steering_matrix(num_elements:int, element_spacing:float, angular_re
     if angular_resolution and num_st_vecs:
        raise TypeError("Either angular_resolution or num_st_vecs can be supplied one at a time")
     
-    M,d,r,p=num_elements, element_spacing, angular_resolution, num_st_vecs
-    scan_thetas_deg = np.arange(-180, 180 + r, r) if r != None else np.linspace(-180, 180, p) 
+    M,d,r,P=num_elements, element_spacing, angular_resolution, num_st_vecs
+    scan_thetas_deg = np.arange(-180, 180 + r, r) if r != None else np.linspace(-180, 180, P) 
     scan_thetas_rad = np.deg2rad(scan_thetas_deg).reshape(1,-1)
-    arr_alignment = np.arange(M).reshape(-1,1)
-    return np.exp(-1j *2* np.pi * d * arr_alignment @ np.sin(scan_thetas_rad))
+
+    return ula_steering_matrix(M,d,scan_thetas_rad)
 
 
-def DOA_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
+def DOA_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
     """
     This plotting function takes in a number of spectrums from various methods (e.g. CAPON and MUSIC) and linearly plots DOA estimates and actual DOAs
         
     Parameters:
-        :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations.
+        :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations. (S x P) where S is number of spectra and P the number of samples
+        :param estimates ([float]): DOA estimates produced from non-spectral methods(e.g. RMUSIC & ESPRIT); pass [] if none present
         :param inc_angs ([float]): originating angles (in deg) of sources used for validation of estimates
-        :param labels ([str]): labels for legend in plot to map spectrum to algorithm which generated it
+        :param labels ([str]): legend labels to map DOA prediction to algorithm which generated it; order [spectra_data labels, estimates labels]
         :param fullView (bool): True: plot angles b/w [-180,180] degrees, else [-90,90] degrees
         :param log_scale (bool): True: plot spectra y values in dB, else watts
         :param normalize (bool): True: subtract max spectrum y value from all spectrum y values
@@ -64,14 +65,19 @@ def DOA_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:list[st
     if not isinstance(spectra_data,list):
       raise TypeError("spectra_data must be Python list")
 
+    is_all_1d_arrays = all(isinstance(arr, np.ndarray) and arr.ndim == 1 for arr in spectra_data)
+    
+    if not is_all_1d_arrays:
+      raise TypeError("spectra_data must contain only numpy 1D arrays")
+
     if any((ang < -180) or (ang > 180) for ang in inc_angs):
       raise TypeError("Incident angles range is b/w [-180,180] degrees")
 
-    if len(spectra_data) > 1 and len(spectra_data) != len(labels):
+    if (len(spectra_data) > 1 or len(estimates) > 1) and (len(spectra_data) + len(estimates)) != len(labels):
       raise TypeError("Number of spectra_data and labels must be equal")
 
     # Preprocess and format
-    spectra_data = np.concatenate(spectra_data,axis=0)
+    spectra_data = np.concatenate(spectra_data,axis=0) # (S x P)
 
     if(log_scale == True):
       spectra_data = 10*np.log10(spectra_data)
@@ -93,29 +99,36 @@ def DOA_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:list[st
     #Plot DOA results
     fig = plt.figure()
     axes  = fig.add_subplot(111)
+
+    # Spectrum-based
     for i in range(spectra_data.shape[0]):
         axes.plot(scan_thetas_deg, spectra_data[i,:].squeeze(),label=labels[i])
+
+    # Estimates-based
+    for i,ang in enumerate(estimates.shape[0]):
+        axes.axvline(x = ang, label=labels[spectra_data.shape[0] + i])
+
+    # Mark source(s) actual DOAs
+    for ang in inc_angs:
+        axes.plot([ang], [0], 'og')
 
     axes.set_title('Direction of Arrival estimation ',fontsize = 16)
     axes.set_xlabel('Incident angle [deg]')
     axes.set_ylabel('Amplitude [watt]')
     if(log_scale == True):
         axes.set_ylabel('Amplitude [dB]')
-    
-    # Mark source(s) actual DOAs
-    for ang in inc_angs:
-        axes.axvline(linewidth = 2,color = 'green',x = ang)
 
     plt.legend()
     plt.grid()
     plt.show()
    
-def DOA_polar_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
+def DOA_polar_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
     """
     This plotting function takes in a number of spectrums from various methods (e.g. CAPON and MUSIC) and radially plots DOA estimates and actual DOAs
         
     Parameters:
-        :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations.
+        :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations. (S x P) where S is number of spectra and P the number of samples
+        :param estimates ([float]): DOA estimates produced from non-spectral methods(e.g. RMUSIC & ESPRIT); pass [] if none present        
         :param inc_angs ([float]): originating angles (in deg) of sources used for validation of estimates
         :param labels ([str]): labels for legend in plot to map spectrum to algorithm which generated it
         :param fullView (bool): True: plot angles b/w [-180,180] degrees, else [-90,90] degrees
@@ -125,11 +138,17 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:l
     # Input check
     if not isinstance(spectra_data,list):
       raise TypeError("spectra_data must be Python list")
+    
+    is_all_1d_arrays = all(isinstance(arr, np.ndarray) and arr.ndim == 1 for arr in spectra_data)
+    
+    if not is_all_1d_arrays:
+      raise TypeError("spectra_data must contain only numpy 1D arrays")
+
 
     if any((ang < -180) or (ang > 180) for ang in inc_angs):
       raise TypeError("Incident angles range is b/w [-180,180] degrees")
 
-    if len(spectra_data) > 1 and len(spectra_data) != len(labels):
+    if (len(spectra_data) > 1 or len(estimates) > 1) and (len(spectra_data) + len(estimates)) != len(labels):
       raise TypeError("Number of spectra_data and labels must be equal")
 
     # Preprocess and format
@@ -154,20 +173,25 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:l
 
     #Plot DOA results
     fig, axes = plt.subplots(subplot_kw={'projection': 'polar'})
-    
+
+    # Spectrum-based
     for i in range(spectra_data.shape[0]):
         axes.plot(np.deg2rad(scan_thetas_deg), spectra_data[i,:].squeeze(),label=labels[i]) # MAKE SURE TO USE RADIAN FOR POLAR
+
+    # Estimates-based
+    for i,ang in enumerate(estimates.shape[0]):
+        axes.axvline(x = np.deg2rad(ang), label=labels[spectra_data.shape[0] + i])
+
+    # Mark source(s) actual DOAs
+    for ang in inc_angs:
+        axes.plot([np.deg2rad(ang)], [0], 'og')
 
     axes.set_title('Direction of Arrival estimation ',fontsize = 16)
     axes.set_xlabel('Incident angle [deg]')
     axes.set_ylabel('Amplitude [watt]')
     if(log_scale == True):
         axes.set_ylabel('Amplitude [dB]')
-            
-    # Mark source(s) actual DOAs
-    for ang in inc_angs:
-        axes.axvline(linewidth = 2,color = 'green',x = np.deg2rad(ang))
-
+    
     axes.set_theta_zero_location('N') # make 0 degrees point up
     axes.set_theta_direction(-1) # increase clockwise
     axes.set_rlabel_position(55)  # Move grid labels away from other labels
@@ -175,6 +199,7 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], inc_angs:list[float], labels:l
     if fullView == False:
         axes.set_thetamin(-90) # only show top half
         axes.set_thetamax(90)
+
     plt.legend()
     plt.grid()
     plt.show()
@@ -207,11 +232,11 @@ def generate_signal_array(num_elements=3, num_snapshots=10000, inc_ang_deg:list[
     thetas_rad = np.deg2rad(thetas_deg) # (1 x K)
     
     # Generate std norm signals for each source
-    soi_matrix = np.random.randn(num_sources,num_snapshots) + 1j * np.random.randn(num_sources,num_snapshots) # (K x N)
+    steered_soi_matrix = np.random.randn(num_sources,num_snapshots) + 1j * np.random.randn(num_sources,num_snapshots) # (K x N)
     
     if coherent:
-        soi_matrix = np.random.randn(1,num_snapshots) + 1j * np.random.randn(1,num_snapshots) # (1 x N)
-        soi_matrix = np.repeat(soi_matrix, num_sources, axis = 0) # (K x N)
+        steered_soi_matrix = np.random.randn(1,num_snapshots) + 1j * np.random.randn(1,num_snapshots) # (1 x N)
+        steered_soi_matrix = np.repeat(steered_soi_matrix, num_sources, axis = 0) # (K x N)
     
     elems = np.arange(num_elements).reshape(-1,1)
 
@@ -227,9 +252,9 @@ def generate_signal_array(num_elements=3, num_snapshots=10000, inc_ang_deg:list[
     noise = np.random.normal(0, np.sqrt(noise_power/2), (num_elements, num_snapshots)) + 1j * np.random.normal(0, np.sqrt(noise_power/2), (num_elements, num_snapshots))
 
     # Received signal with noise
-    tx_signal = a @ soi_matrix + noise # (M x K) @ (K x N) + (M x N) = (M x N)
+    tx_signal = a @ steered_soi_matrix + noise # (M x K) @ (K x N) + (M x N) = (M x N)
     
-    return (soi_matrix, tx_signal)
+    return (steered_soi_matrix, tx_signal)
 
 # Example parameters
 num_elements = 8       # Number of array elements
@@ -241,3 +266,25 @@ SNR_dB = 15            # Desired SNR in dB
 received_signal = generate_signal_array(num_elements, num_snapshots, angles, SNR_dB=SNR_dB)
 
 print(received_signal.shape)  # Should be (num_elements, num_snapshots)
+
+def sum_across_diagonals(matrix):
+    n = matrix.shape[0]
+    real_part = matrix.real
+    imag_part = matrix.imag
+    
+    row_indices = np.arange(n).reshape(-1, 1)
+    col_indices = np.arange(n).reshape(1, -1)
+    
+    # Col - row: southwest diagonal last, northeast diagonal first
+    # Row - col: northeast diagonal last, southwest diagonal first
+    diagonals = col_indices - row_indices
+    
+    shifted_diagonals = diagonals + (n - 1)
+    
+    flat_real = real_part.flatten()
+    flat_imag = imag_part.flatten()
+    
+    real_bins = np.bincount(shifted_diagonals.ravel(), weights=flat_real)
+    imag_bins = np.bincount(shifted_diagonals.ravel(), weights=flat_imag)
+    
+    return real_bins + 1j * imag_bins
