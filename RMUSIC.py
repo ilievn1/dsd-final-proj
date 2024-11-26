@@ -1,0 +1,50 @@
+from .doaestimator import DOAEstimator
+import numpy as np
+from .utils import *
+
+class RMUSIC(DOAEstimator):
+
+    def calculate_spectrum(self, R, steering_vectors, **kwargs):
+        raise TypeError("Non-spectrum method")
+
+    def estimate_doa(self, R, steering_vectors, K):
+        """
+        Parameters:
+            :param R: spatial covariance matrix
+            :param steering_vectors : Generated using the array alignment and the incident angles
+            :param K: expected signal count
+
+            :type R: 2D numpy array with size of M x M, where M is the number of antennas in the antenna system
+            :type steering vectors: 2D numpy array with size: M x P, where P is the number of scanning angles
+            :type K: int
+
+        Return values:
+            :return DOA: DOA estimates (in deg)
+            :return spectrum: spectrum (e.g. angular distribution of pwr or noise subspace orthogonality)
+            :rtype DOA: [float]
+            :rtype spectrum: 1D ndarray (P,)
+        """
+        # --> Input check
+        if R.shape[0] != R.shape[1]:
+            raise TypeError("Covariance matrix is not square")
+
+        if R.shape[0] != steering_vectors.shape[0]:
+            raise TypeError("Covariance matrix dimension does not match with the antenna array dimension")
+
+        _, U = np.linalg.eigh(R)
+        # Eigenvalues are sorted in ascending order.
+        U_n = U[:,:-K] # (M x (M - K))
+
+        R_n = U_n @ U_n.conj().T # (M x (M - K)) @ ((M - K) x M)] = (M x M)
+
+        pol_coef = sum_across_diagonals(R_n)
+        roots = np.roots(pol_coef)
+
+        roots_inside_UC = roots[np.abs(roots) < 1]
+        # Sort roots in asc order according to UC proximity
+        roots_inside_UC = roots_inside_UC[np.argsort(np.abs(np.abs(roots_inside_UC)-1))]
+
+        estimated_DOAs = np.arcsin(-1/(2*np.pi*0.5)*np.arg(roots))
+        estimated_DOAs = np.rad2deg(estimated_DOAs)
+
+        return estimated_DOAs, None
