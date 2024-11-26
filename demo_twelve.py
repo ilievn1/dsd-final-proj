@@ -1,4 +1,3 @@
-
 import numpy as np
 from .utils import *
 import BartlettBeamformer
@@ -7,13 +6,13 @@ import MUSIC
 
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
-# 12         | Complex noise distributions | Noise with mixed Laplacian, Rayleigh, Gaussian, Exponential, etc., across channels
+# 12          | Sparse array | 2-element ULA, less spatial information, various source spacing and non-uniform SNR, models struggle with resolution
 
-M = 6
+M = 2
 d = 0.5 # in wavelengths
 N = 100  # sample size
 
-inc_ang_deg = [-20, 20]
+inc_ang_deg = [-40,-30,-20, 20, 80]
 thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
 K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
 thetas_rad = np.deg2rad(thetas_deg)
@@ -22,7 +21,7 @@ thetas_rad = np.deg2rad(thetas_deg)
 soi = np.random.randn(K, N)   # Signal(s) of Interest
 
 # Augment generated signals with the given SNR
-snr = [0,0]
+snr = [-40, 0, 0, -10, 20]
 snr = np.asarray(snr) # (K,)
 power = 10**(snr / 10) 
 power = np.sqrt(power) 
@@ -34,37 +33,9 @@ A = ula_steering_matrix(M,d,thetas_rad) # (M x K)
 
 steered_soi_matrix = A @ soi # (M x K) @ (K x N) = (M x N)
 
-# Generate noise for each channel with different distributions
-noise = np.zeros((M, N), dtype=complex)
-distributions = ['gaussian', 'laplacian', 'rician', 'rayleigh', 'exponential', 'custom']
-
-for m in range(M):
-    noise_power = 1
-    # sqrt (np / 2) splits between Re and Im components.
-    if distributions[m] == 'gaussian':
-        noise[m, :] = np.sqrt(noise_power) * (np.random.randn(N) + 1j * np.random.randn(N))
-    elif distributions[m] == 'laplacian':
-        real = np.random.laplace(0, np.sqrt(noise_power / 2), N)
-        imag = np.random.laplace(0, np.sqrt(noise_power / 2), N)
-        noise[m, :] = real + 1j * imag
-    elif distributions[m] == 'rician':
-        v = np.sqrt(noise_power / 2)
-        noise[m, :] = np.random.normal(v, v, N) + 1j * np.random.normal(v, v, N)
-    elif distributions[m] == 'rayleigh':
-        scale = np.sqrt(noise_power / 2)
-        magnitude = np.random.rayleigh(scale, N)
-        phase = np.random.uniform(0, 2 * np.pi, N)
-        noise[m, :] = magnitude * np.exp(1j * phase)
-    elif distributions[m] == 'exponential':
-        scale = np.sqrt(noise_power / 2)
-        real = np.random.exponential(scale, N)
-        imag = np.random.exponential(scale, N)
-        noise[m, :] = real + 1j * imag
-    elif distributions[m] == 'custom':
-        real = np.random.normal(0, np.sqrt(noise_power / 2), N)
-        imag = np.random.uniform(-np.sqrt(noise_power), np.sqrt(noise_power), N)
-        noise[m, :] = real + 1j * imag
-
+# Generate multichannel uncorrelated noise
+noise = np.random.randn(M,N) + 1j*np.random.randn(M,N)
+noise = 0.5 * noise # split between Re and Im components.
 
 # Create received signal
 tx_signal = steered_soi_matrix + noise
@@ -86,5 +57,3 @@ print("MUSIC_ORTAD estimates", estimates)
 
 DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC"])
 DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC"])
-
-

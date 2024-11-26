@@ -6,11 +6,11 @@ import MUSIC
 
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
-# 10         | Multipath coherency | 1 source at -20°, reflection at 20°,  SNR_1 is 15dB, SNR_2 is -15dB, AWGN
+# 10          | Reduced number of samples | 20 samples instead of 100, 2 sources at -20° and 20°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN
 
 M = 4
 d = 0.5 # in wavelengths
-N = 100  # sample size
+N = 20  # sample size
 
 inc_ang_deg = [-20, 20]
 thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
@@ -18,11 +18,10 @@ K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
 thetas_rad = np.deg2rad(thetas_deg)
 
 # Generate source signals
-soi = np.random.randn(1, N)   # Signal(s) of Interest
-soi = np.repeat(soi,K,axis=0)
+soi = np.random.randn(K, N)   # Signal(s) of Interest
 
 # Augment generated signals with the given SNR
-snr = [15, -15]
+snr = [15,-15]
 snr = np.asarray(snr) # (K,)
 power = 10**(snr / 10) 
 power = np.sqrt(power) 

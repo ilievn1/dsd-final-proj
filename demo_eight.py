@@ -6,13 +6,13 @@ import MUSIC
 
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
-# 8          | Off-grid resolution | 2 sources at -23.7° and 23.3°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN, 1 deg angular scan resolution
+# 8          | Correlated noise | 2 sources at -20° and 20°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN highly correlated
 
 M = 4
 d = 0.5 # in wavelengths
 N = 100  # sample size
 
-inc_ang_deg = [-23.7, 23.3]
+inc_ang_deg = [-20, 20]
 thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
 K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
 thetas_rad = np.deg2rad(thetas_deg)
@@ -33,8 +33,11 @@ A = ula_steering_matrix(M,d,thetas_rad) # (M x K)
 
 steered_soi_matrix = A @ soi # (M x K) @ (K x N) = (M x N)
 
-# Generate multichannel uncorrelated noise
+# Generate multichannel correlated noise
 noise = np.random.randn(M,N) + 1j*np.random.randn(M,N)
+correlation_matrix = np.array([[1, 0.8], [0.8, 1]])  # High correlation
+noise = np.linalg.cholesky(correlation_matrix).dot(noise)
+
 noise = 0.5 * noise # split between Re and Im components.
 
 # Create received signal

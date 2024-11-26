@@ -19,7 +19,7 @@ thetas_rad = np.deg2rad(thetas_deg)
 
 # Generate source signals
 soi = np.random.randn(K, N)   # Signal(s) of Interest
-correlation_matrix = np.array([[1, 0.8], [0.8, 1]])  # High correlation
+correlation_matrix = np.array([[1, 0.1], [0.1, 1]])  # High correlation
 soi = np.linalg.cholesky(correlation_matrix).dot(soi)
 
 # Augment generated signals with the given SNR
