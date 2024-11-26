@@ -122,13 +122,13 @@ def DOA_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_angs:list
     plt.grid()
     plt.show()
    
-def DOA_polar_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
+def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
     """
     This plotting function takes in a number of spectrums from various methods (e.g. CAPON and MUSIC) and radially plots DOA estimates and actual DOAs
         
     Parameters:
         :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations. (S x P) where S is number of spectra and P the number of samples
-        :param estimates ([float]): DOA estimates produced from non-spectral methods(e.g. RMUSIC & ESPRIT); pass [] if none present        
+        :param estimates_groups ([np.ndarray]): DOA estimates produced from non-spectral methods(e.g. RMUSIC & ESPRIT); pass [] if none present
         :param inc_angs ([float]): originating angles (in deg) of sources used for validation of estimates
         :param labels ([str]): labels for legend in plot to map spectrum to algorithm which generated it
         :param fullView (bool): True: plot angles b/w [-180,180] degrees, else [-90,90] degrees
@@ -139,20 +139,31 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_ang
     if not isinstance(spectra_data,list):
       raise TypeError("spectra_data must be Python list")
     
+    if not isinstance(estimates_groups,list):
+      raise TypeError("estimates_groups must be Python list")
+
     is_all_1d_arrays = all(isinstance(arr, np.ndarray) and arr.ndim == 1 for arr in spectra_data)
-    
     if not is_all_1d_arrays:
       raise TypeError("spectra_data must contain only numpy 1D arrays")
 
+    is_all_1d_arrays = all(isinstance(arr, np.ndarray) and arr.ndim == 1 for arr in estimates_groups)
+    if not is_all_1d_arrays:
+      raise TypeError("estimates_groups must contain only numpy 1D arrays")
+
+    it = iter(spectra_data)
+    the_len = len(next(it))
+    if not all(len(l) == the_len for l in it):
+        raise ValueError('Spectras must have same length. Use same scanning number of vector / angular res for each spectrum')
 
     if any((ang < -180) or (ang > 180) for ang in inc_angs):
       raise TypeError("Incident angles range is b/w [-180,180] degrees")
 
-    if (len(spectra_data) > 1 or len(estimates) > 1) and (len(spectra_data) + len(estimates)) != len(labels):
+    if (len(spectra_data) > 1 or len(estimates_groups) > 1) and (len(spectra_data) + len(estimates_groups)) != len(labels):
       raise TypeError("Number of spectra_data and labels must be equal")
 
     # Preprocess and format
-    spectra_data = np.concatenate(spectra_data,axis=0) # (S x P) 
+    S = len(spectra_data)
+    spectra_data = np.concatenate(spectra_data,axis=0).reshape(S,-1) # (S x P)
 
     if(log_scale == True):
       spectra_data = 10*np.log10(spectra_data)
@@ -176,11 +187,13 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_ang
 
     # Spectrum-based
     for i in range(spectra_data.shape[0]):
-        axes.plot(np.deg2rad(scan_thetas_deg), spectra_data[i,:].squeeze(),label=labels[i]) # MAKE SURE TO USE RADIAN FOR POLAR
+        label = labels[i] if i < len(labels) else None
+        axes.plot(np.deg2rad(scan_thetas_deg), spectra_data[i,:].squeeze(),label=label) # MAKE SURE TO USE RADIAN FOR POLAR
 
     # Estimates-based
-    for i,ang in enumerate(estimates.shape[0]):
-        axes.axvline(x = np.deg2rad(ang), label=labels[spectra_data.shape[0] + i])
+    for i,angs in enumerate(estimates_groups):
+        label=labels[S + i]
+        axes.vlines(x = np.deg2rad(angs), ymin=np.min(spectra_data)*np.ones(len(angs)), ymax=np.max(spectra_data)*np.ones(len(angs)), ls='--', label=label)
 
     # Mark source(s) actual DOAs
     for ang in inc_angs:
@@ -203,7 +216,6 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_ang
     plt.legend()
     plt.grid()
     plt.show()
-
 
 # TODO: steering vec gen dependent on ULA geometry, generalize
 """ 
