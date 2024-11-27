@@ -222,6 +222,18 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarr
 TODO: Make possible to add different types of Noise (to be defined e.g. Rician, Laplace, Gauss, Rayleigh)
       Make possible to add different types of Noise to different signals and of different intensities.
 """
+
+"""
+Disclaimer!
+Noise after phase shifting samples:
+For AWGN, noise can be added to received signal after samples are phase-shifted and act as sensor noise
+then "noise" var dimensions need be (num_sensors x num_samples).
+
+Noise prior to phase shifting samples:
+For AWGN, noise can be added to received signal prior to phase-shifting and act as environmental noise
+then "noise" var dimensions need be (num_signals x num_samples).
+We can do this because AWGN with a phase shift applied is still AWGN.
+"""
 def generate_signal_array(num_elements=3, num_snapshots=10000, inc_ang_deg:list[int]=[20], d=0.5, coherent=False, SNR_dB=20):
     """
     Generates a multichannel test signal with desired SNR.
