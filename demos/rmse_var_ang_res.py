@@ -35,14 +35,14 @@ def rmse_var_ang_res():
         thetas_rad = np.deg2rad(thetas_deg)
     
         # Generate ULA steering matrix
-        A = ula_steering_matrix(M, d, inc_ang_deg)  # (M x K)
+        A = ula_steering_matrix(M, d, thetas_rad)  # (M x K)
     
         # Generate scanning steering matrix
         ula_st_vectors = ula_scan_steering_matrix(M, d, angular_resolution=0.1 + sep)  # (M x P)
     
         # Generate signals and noise
         soi = np.random.randn(K, N, num_trials)
-        noise = 0.5 * (np.random.randn(M, N, num_trials) + 1j * np.random.randn(M, N, num_trials))
+        noise = (np.random.randn(M, N, num_trials) + 1j * np.random.randn(M, N, num_trials)) * np.sqrt(noise_power / 2)
     
         steered_soi_matrix = np.tensordot(A, soi, axes=(1, 0))
         tx_signal = steered_soi_matrix + noise  # (M x N x num_trials)

@@ -21,7 +21,7 @@ def rmse_var_snr():
     SNRs = np.linspace(-40, 20, 10)  # SNR range in dB
 
     # Generate ULA steering matrix
-    A = ula_steering_matrix(M, d, inc_ang_deg)  # (M x K)
+    A = ula_steering_matrix(M, d, thetas_rad)  # (M x K)
 
     # Generate scanning steering matrix
     ula_st_vectors = ula_scan_steering_matrix(M, d, angular_resolution=1)  # (M x P)

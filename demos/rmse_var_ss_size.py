@@ -23,7 +23,7 @@ def rmse_var_ss_size():
     noise_power = 1 / snr_linear
     
     # Generate ULA steering matrix
-    A = ula_steering_matrix(M, d, inc_ang_deg)  # (M x K)
+    A = ula_steering_matrix(M, d, thetas_rad)  # (M x K)
     
     # Generate scanning steering matrix
     ula_st_vectors = ula_scan_steering_matrix(M, d, angular_resolution=1)  # (M x P)
@@ -36,7 +36,7 @@ def rmse_var_ss_size():
     
         # Generate signals and noise
         soi = np.random.randn(K, N, num_trials)
-        noise = 0.5 * (np.random.randn(M, N, num_trials) + 1j * np.random.randn(M, N, num_trials))
+        noise = (np.random.randn(M, N, num_trials) + 1j * np.random.randn(M, N, num_trials)) * np.sqrt(noise_power / 2)
     
         # Generate transmitted signal
         steered_soi_matrix = np.tensordot(A, soi, axes=(1, 0))
