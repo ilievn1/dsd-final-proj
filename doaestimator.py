@@ -55,16 +55,18 @@ class DOAEstimator(ABC):
         pass
 
     @classmethod
-    def estimate_doa(cls, R, steering_vectors, K):
+    def estimate_doa(cls, R, steering_vectors, K, full_spectrum_peaks = False):
         """
         Parameters:
             :param R: spatial covariance matrix
             :param steering_vectors : Generated using the array alignment and the incident angles
             :param K: expected signal count
-
+            :param full_spectrum_peaks: look for peaks in [-180,180] deg range, else look for peaks in [-90,90] deg range
+            
             :type R: 2D numpy array with size of M x M, where M is the number of antennas in the antenna system
             :type steering vectors: 2D numpy array with size: M x P, where P is the number of scanning angles
             :type K: int
+            :type full_spectrum_peaks: bool
 
         Return values:
             :return DOA: DOA estimates (in deg)
@@ -85,8 +87,15 @@ class DOAEstimator(ABC):
         spectrum = cls.calculate_spectrum(R, s, K=K)
         r = 360.0/(len(spectrum) - 1 )
         scan_thetas_deg = np.arange(-180, 180 + r, r)
-        
+
         # Find K peaks
         max_idxs = np.argpartition(spectrum, -K)[-K:]
+        
+        if full_spectrum_peaks == False:
+          left_idx = np.argmin(np.abs(scan_thetas_deg - (-90)))
+          right_idx = np.argmin(np.abs(scan_thetas_deg - 90))
+          scan_thetas_deg = scan_thetas_deg[left_idx:right_idx+1]
+          max_idxs = np.argpartition(spectrum[left_idx:right_idx+1], -K)[-K:]
+                  
         estimated_DOAs = sorted(scan_thetas_deg[max_idxs])
         return estimated_DOAs, spectrum
