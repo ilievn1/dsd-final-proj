@@ -84,18 +84,22 @@ class DOAEstimator(ABC):
 
         s = steering_vectors
 
-        spectrum = cls.calculate_spectrum(R, s, K=K)
+        spectrum = cls.calculate_spectrum(R, s, K=K) # [-pi,pi] spectrum
         r = 360.0/(len(spectrum) - 1 )
         scan_thetas_deg = np.arange(-180, 180 + r, r)
 
-        # Find K peaks
-        max_idxs = np.argpartition(spectrum, -K)[-K:]
-        
+        # Find all peaks in [-pi,pi]
+        max_idxs, _ = scipy.signal.find_peaks(spectrum)
+        max_idxs = sorted(max_idxs, key=lambda idx: spectrum[idx],reverse=True)[:K]
+
         if full_spectrum_peaks == False:
           left_idx = np.argmin(np.abs(scan_thetas_deg - (-90)))
           right_idx = np.argmin(np.abs(scan_thetas_deg - 90))
           scan_thetas_deg = scan_thetas_deg[left_idx:right_idx+1]
-          max_idxs = np.argpartition(spectrum[left_idx:right_idx+1], -K)[-K:]
-                  
-        estimated_DOAs = sorted(scan_thetas_deg[max_idxs])
+          half_range_sp = spectrum[left_idx:right_idx+1]
+          max_idxs, _ = scipy.signal.find_peaks(half_range_sp)
+          max_idxs = sorted(max_idxs, key=lambda idx: half_range_sp[idx],reverse=True)[:K]
+
+        estimated_DOAs = np.sort(scan_thetas_deg[max_idxs]) # Sort left to right
+        
         return estimated_DOAs, spectrum
