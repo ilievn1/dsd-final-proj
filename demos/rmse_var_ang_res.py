@@ -5,6 +5,7 @@ import BartlettBeamformer
 import CaponBeamformer
 import MUSIC
 import RMUSIC
+import ESPRIT
 
 def rmse_var_ang_res():
     # Parameters
@@ -13,11 +14,6 @@ def rmse_var_ang_res():
     N = 100  # Number of snapshots
     num_trials = 100
     
-    inc_ang_deg = [20, 23]
-    thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
-    K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
-    thetas_rad = np.deg2rad(thetas_deg)
-    
     snr = 10  # Fixed SNR in dB
     snr_linear = 10 ** (snr / 10)  # SNR in linear scale
     noise_power = 1 / snr_linear
@@ -25,15 +21,15 @@ def rmse_var_ang_res():
     ang_separations = np.arange(0, 30, 0.1) # in deg
     
     # RMSE storage
-    rmse_matrix = np.zeros(5,len(ang_separations)) # 4 + 1 = num of estimator, currently CBF,MVDR,MUSIC,RMUSIC + CRLB
+    rmse_matrix = np.zeros((5,len(ang_separations)),dtype=np.complex_) # 4 + 1 = num of estimator, currently CBF,MVDR,MUSIC,RMUSIC + CRLB
     
     # Monte Carlo trials using matrix operations
     for i, sep in enumerate(ang_separations):
-        inc_ang_deg = [20, 20 + sep]
-        thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
-        K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
-        thetas_rad = np.deg2rad(thetas_deg)
-    
+      inc_ang_deg = [20, 20 + sep]
+      thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
+      K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
+      thetas_rad = np.deg2rad(thetas_deg)
+      for t in range(num_trials):
         # Generate ULA steering matrix
         A = ula_steering_matrix(M, d, thetas_rad)  # (M x K)
     
@@ -41,47 +37,49 @@ def rmse_var_ang_res():
         ula_st_vectors = ula_scan_steering_matrix(M, d, angular_resolution=0.1 + sep)  # (M x P)
     
         # Generate signals and noise
-        soi = np.random.randn(K, N, num_trials)
-        noise = (np.random.randn(M, N, num_trials) + 1j * np.random.randn(M, N, num_trials)) * np.sqrt(noise_power / 2)
+        soi = np.random.randn(K, N)
+        noise = (np.random.randn(M, N) + 1j * np.random.randn(M, N)) * np.sqrt(noise_power / 2)
     
-        steered_soi_matrix = np.tensordot(A, soi, axes=(1, 0))
+        steered_soi_matrix =  A @ soi  # (M x N)
         tx_signal = steered_soi_matrix + noise  # (M x N x num_trials)
     
         # Covariance matrix estimation
-        R = np.tensordot(tx_signal, np.conj(tx_signal), axes=(1, 1)) / N  # (M x N x num_trials)
-    
+        # R = np.einsum('imt,jmt->ijt', tx_signal, np.conj(tx_signal)) / N # (M x M x num_trials)
+        R = (tx_signal @ tx_signal.conj().T)/tx_signal.shape[1]
+
         # Bartlett
         estimated_angs, _ = BartlettBeamformer.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[0,i] = np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[0,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
         # Capon
         estimated_angs, _ = CaponBeamformer.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[1,i] = np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[1,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
         # MUSIC
         estimated_angs, _ = MUSIC.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[2,i] = np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[2,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
         # ROOTMUSIC
         estimated_angs, _ = RMUSIC.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[3,i] = np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[3,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
         
         # CRLB
         # Formula: P. Stoica, A. Nehorai "MUSIC, Maximum Likelihood, and Cramer-Rao Bound"
         # Sec. VII Eq. 7.7b
-        d = (A.T * 1j*np.arange(M)).T # (M,) * (M x K) || Hadamard prod w/o repeating d along all K cols
+        da_dth = (A.T * 1j*np.arange(M)).T # (M,) * (M x K) || Hadamard prod w/o repeating d along all K cols
     
-        h = d.conj().T @ (np.eye(M) - A @ np.linalg.inv( A.conj().T @ A) @ A.conj().T) @ d   
+        h = da_dth.conj().T @ (np.eye(M) - A @ np.linalg.inv( A.conj().T @ A) @ A.conj().T) @ da_dth   
         
         var_crlb = (1/(2*N*snr_linear)) / np.diag(h) # (K,) diag extracts i-th est for i-th true inc angle
         
-        rmse_matrix[4, i] = np.sqrt(np.mean(var_crlb))
+        rmse_matrix[4, i] += np.sqrt(np.mean(var_crlb))
     
-    
+    rmse_matrix /= num_trials  # Average over trials
+
     # Plot RMSE as a function of SNR
     plt.figure(figsize=(8, 6))
-    plt.plot(ang_separations, rmse_matrix[0,:], label="Bartlett", marker="o:r")
-    plt.plot(ang_separations, rmse_matrix[1,:], label="Capon", marker="x:g")
-    plt.plot(ang_separations, rmse_matrix[2,:], label="MUSIC", marker="d:b")
-    plt.plot(ang_separations, rmse_matrix[3,:], label="ROOT", marker="+:m")
-    plt.plot(ang_separations, rmse_matrix[4,:], label="CRLB", marker="-k")
+    plt.plot(ang_separations, rmse_matrix[0,:], "o:r", label="Bartlett")
+    plt.plot(ang_separations, rmse_matrix[1,:], "o:g", label="Capon")
+    plt.plot(ang_separations, rmse_matrix[2,:], "d:b", label="MUSIC")
+    plt.plot(ang_separations, rmse_matrix[3,:], "x:m", label="ROOT")
+    plt.plot(ang_separations, rmse_matrix[4,:], "-k", label="CRLB")
     
     plt.title(f"RMSE as a Function of angular separation")
     plt.suptitle(f"Uncorrelated M={M}, d={d}, equal SNR = {snr} dB, ss_size={N}")
