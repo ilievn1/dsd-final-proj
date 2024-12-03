@@ -61,7 +61,6 @@ class ESPRIT(DOAEstimator):
         V_22_inv = scipy.linalg.solve(V_22,np.eye(K))
         psi_tls = -1*V_12 @ V_22_inv # (K x K)
         Phi, _ = np.linalg.eigh(psi_tls)
-        Phi = np.diag(Phi)
 
         # TODO: Here 0.5 = d is magic number, when DOA ABC is fully implemented, d should be accesible thru parent ABC
 
