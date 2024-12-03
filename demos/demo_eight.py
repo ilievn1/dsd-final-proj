@@ -4,6 +4,7 @@ import BartlettBeamformer
 import CaponBeamformer
 import MUSIC
 import RMUSIC
+import ESPRIT
 
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
@@ -58,8 +59,10 @@ def demo_eight():
     _ ,Bartlett_PAD = BartlettBeamformer.estimate_doa(R, ula_st_vectors, K)
     _ ,Capon_PAD = CaponBeamformer.estimate_doa(R, ula_st_vectors, K)
     _ ,MUSIC_ORTAD = MUSIC.estimate_doa(R, ula_st_vectors, K)
-    estimates,_ = RMUSIC.estimate_doa(R, ula_st_vectors, K)
-    print("ROOT MUSIC estimates", estimates)
+    rm_estimates,_ = RMUSIC.estimate_doa(R, ula_st_vectors, K)
+    esp_estimates,_ = ESPRIT.estimate_doa(R, ula_st_vectors, K)
+    print("ROOT MUSIC estimates", rm_estimates)
+    print("ESPRIT estimates", esp_estimates)
 
-    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT"])
-    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT"])
+    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
+    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
