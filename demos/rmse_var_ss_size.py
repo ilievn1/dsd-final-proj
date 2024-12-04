@@ -7,7 +7,7 @@ import MUSIC
 import RMUSIC
 import ESPRIT
 
-def rmse_var_ss_size(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], snr = 10, T = 100, save_fig=True, fig_name='rmse_ss_size_demo'):
+def rmse_var_ss_size(M = 4,d = 0.5, inc_ang_deg = [20, 23], snr = 10, T = 100, save_fig=True, fig_name='rmse_ss_size_demo'):
     num_trials = T
     
     thetas_deg = np.array(inc_ang_deg).reshape(1, -1)  # (1 x K) Incident angles of test signal
@@ -68,6 +68,29 @@ def rmse_var_ss_size(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], snr = 10, T 
         h = da_dth.conj().T @ (np.eye(M) - A @ np.linalg.inv( A.conj().T @ A) @ A.conj().T) @ da_dth   
         
         var_crlb = (1/(2*N*snr_linear)) / np.diag(h) # (K,) diag extracts i-th est for i-th true inc angle
+        """
+        Small N formula
+        D = da_dth # (M x K)
+        Pi_orth = (np.eye(K) - A @ np.linalg.inv( A.conj().T @ A) @ A.conj().T) # (K x K)
+        X = np.eye(K)[None, :, :] * soi.T[:, :, None]
+        crlb = np.zeros((K, K), dtype=np.complex128)
+        for i in range(N):
+            X_i = X[i]
+            crlb += np.re(X_i.conj().T @ D.conj().T @ Pi_orth @ D @ X_i)
+        # As tensor; to be tested
+        crlb = np.einsum(
+            'nij,jk,nkl->il',  # Contraction: Hermitian, Y, original matrix
+            X.conj(),  # Hermitian conjugate of X
+            D.conj().T @ Pi_orth @ D,
+            X
+        )    
+        
+        crlb = (noise_power / 2) * np.reciprocal (np.re(crlb))   
+        crlb = np.diag(crlb)
+        
+        var_crlb = np.sqrt(np.mean((inc_ang_deg - crlb) ** 2))
+        rmse_matrix[4, i] += np.sqrt(np.mean(var_crlb))
+        """
         
         rmse_matrix[4, i] += np.sqrt(np.mean(var_crlb))
     
