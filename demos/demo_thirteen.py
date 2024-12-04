@@ -10,7 +10,7 @@ import ESPRIT
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
 # 13         | Complex noise distributions | Noise with mixed Laplacian, Rayleigh, Gaussian, Exponential, etc., across channels
-def demo_thirteen():        
+def demo_thirteen(M = 4,d = 0.5,N = 100, figName = None):        
     M = 6
     d = 0.5 # in wavelengths
     N = 100  # sample size
@@ -84,5 +84,5 @@ def demo_thirteen():
     esp_estimates,_ = ESPRIT.estimate_doa(R, ula_st_vectors, K)
     print("ROOT MUSIC estimates", rm_estimates)
     print("ESPRIT estimates", esp_estimates)
-    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
-    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
+    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =figName)
+    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =f'{figName}_polar')

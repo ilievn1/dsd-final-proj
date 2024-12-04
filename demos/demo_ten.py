@@ -9,7 +9,7 @@ import ESPRIT
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
 # 10          | Reduced number of samples | 10 samples instead of 100, 2 sources at -20° and 20°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN
-def demo_ten():        
+def demo_ten(M = 4,d = 0.5,N = 100, figName = None):        
     M = 4
     d = 0.5 # in wavelengths
     N = 20  # sample size
@@ -55,5 +55,5 @@ def demo_ten():
     esp_estimates,_ = ESPRIT.estimate_doa(R, ula_st_vectors, K)
     print("ROOT MUSIC estimates", rm_estimates)
     print("ESPRIT estimates", esp_estimates)
-    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
-    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
+    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =figName)
+    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =f'{figName}_polar')

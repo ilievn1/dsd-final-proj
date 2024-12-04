@@ -7,14 +7,9 @@ import MUSIC
 import RMUSIC
 import ESPRIT
 
-def rmse_var_ang_res():
-    # Parameters
-    M = 4  # Number of elements in ULA
-    d = 0.5  # Element spacing in wavelengths
-    N = 100  # Number of snapshots
-    num_trials = 100
+def rmse_var_ang_res(M = 4,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fig_name='rmse_ang_res_demo'):
+    num_trials = T
     
-    snr = 10  # Fixed SNR in dB
     snr_linear = 10 ** (snr / 10)  # SNR in linear scale
     noise_power = 1 / snr_linear
     
@@ -88,3 +83,7 @@ def rmse_var_ang_res():
     plt.grid()
     plt.legend()
     plt.show()
+    if save_fig == True:
+        if fig_name == None:
+            fig_name = os.urandom(15).hex()
+        plt.save_fig(f'{fig_name}.eps', format='eps')

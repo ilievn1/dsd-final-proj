@@ -7,14 +7,9 @@ import MUSIC
 import RMUSIC
 import ESPRIT
 
-def rmse_var_snr():
-    # Parameters
-    M = 4  # Number of elements in ULA
-    d = 0.5  # Element spacing in wavelengths
-    N = 100  # Number of snapshots
-    num_trials = 1000
+def rmse_var_snr(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], T = 100, save_fig=True, fig_name='rmse_snr_demo'):
+    num_trials = T
 
-    inc_ang_deg = [20, 23]
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
     K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
     thetas_rad = np.deg2rad(thetas_deg)
@@ -88,3 +83,7 @@ def rmse_var_snr():
     plt.grid()
     plt.legend()
     plt.show()
+    if save_fig == True:
+        if fig_name == None:
+            fig_name = os.urandom(15).hex()
+        plt.save_fig(f'{fig_name}.eps', format='eps')

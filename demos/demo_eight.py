@@ -10,10 +10,8 @@ import ESPRIT
 # ----------------------------------------------
 # 8          | Correlated noise | 2 sources at -20° and 20°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN highly correlated
 
-def demo_eight():    
-    M = 4
-    d = 0.5 # in wavelengths
-    N = 100  # sample size
+def demo_eight(M = 4,d = 0.5,N = 100, figName = None):    
+
 
     inc_ang_deg = [-20, 20]
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
@@ -64,5 +62,5 @@ def demo_eight():
     print("ROOT MUSIC estimates", rm_estimates)
     print("ESPRIT estimates", esp_estimates)
 
-    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
-    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
+    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =figName)
+    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =f'{figName}_polar')

@@ -10,7 +10,7 @@ import ESPRIT
 # ----------------------------------------------
 # 12          | Sparse array | 2-element ULA, less spatial information, various source spacing and non-uniform SNR, models struggle with resolution
 
-def demo_twelve():        
+def demo_twelve(M = 4,d = 0.5,N = 100, figName = None):        
     M = 2
     d = 0.5 # in wavelengths
     N = 100  # sample size
@@ -56,5 +56,5 @@ def demo_twelve():
     esp_estimates,_ = ESPRIT.estimate_doa(R, ula_st_vectors, K)
     print("ROOT MUSIC estimates", rm_estimates)
     print("ESPRIT estimates", esp_estimates)
-    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
-    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"])
+    DOA_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =figName)
+    DOA_polar_plot([Bartlett_PAD,Capon_PAD, MUSIC_ORTAD],[np.asarray(rm_estimates), np.asarray(esp_estimates)], inc_ang_deg, labels=["Bartlett","Capon", "MUSIC", "ROOT", "ESPRIT"], save_fig=True, fig_name =f'{figName}_polar')

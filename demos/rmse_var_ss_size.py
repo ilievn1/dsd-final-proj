@@ -7,19 +7,15 @@ import MUSIC
 import RMUSIC
 import ESPRIT
 
-def rmse_var_ss_size():
-    # Parameters
-    M = 4  # Number of elements in ULA
-    d = 0.5  # Element spacing in wavelengths
-    num_trials = 1000
+def rmse_var_ss_size(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], snr = 10, T = 100, save_fig=True, fig_name='rmse_ss_size_demo'):
+    num_trials = T
     
-    inc_ang_deg = [20, 23]
     thetas_deg = np.array(inc_ang_deg).reshape(1, -1)  # (1 x K) Incident angles of test signal
     K = thetas_deg.shape[1]  # K MUST BE < M - 1 FOR CORRECT DETECTION
     thetas_rad = np.deg2rad(thetas_deg)
     
     snapshot_sizes = 2**np.arange(14)  # Snapshot sizes
-    snr = 10  # Fixed SNR in dB
+
     snr_linear = 10 ** (snr / 10)  # SNR in linear scale
     noise_power = 1 / snr_linear
     
@@ -93,3 +89,7 @@ def rmse_var_ss_size():
     plt.grid()
     plt.legend()
     plt.show()
+    if save_fig == True:
+        if fig_name == None:
+            fig_name = os.urandom(15).hex()
+        plt.save_fig(f'{fig_name}.eps', format='eps')
