@@ -45,7 +45,7 @@ def rmse_var_ang_res():
     
         # Covariance matrix estimation
         # R = np.einsum('imt,jmt->ijt', tx_signal, np.conj(tx_signal)) / N # (M x M x num_trials)
-        R = (tx_signal @ tx_signal.conj().T)/tx_signal.shape[1]
+        R = cov(tx_signal)
 
         # Bartlett
         estimated_angs, _ = BartlettBeamformer.estimate_doa(R, ula_st_vectors, K)

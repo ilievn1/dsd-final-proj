@@ -312,3 +312,27 @@ def sum_across_diagonals(matrix):
     imag_bins = np.bincount(shifted_diagonals.ravel(), weights=flat_imag)
     
     return real_bins + 1j * imag_bins
+
+def cov(X,fba=False):
+  """
+  Parameters:
+  -----------
+      :param X : Received multichannel signal matrix from the antenna array.         
+      :param fba: Forward-backward average.
+      
+      :type X: 2D numpy array with size of M x N, where M is the number of antenna elements, N is the number of samples.
+      :type fba: bool
+          
+  Return values:
+  -------------
+      :return R : Estimated spatial correlation matrix
+      :rtype R: 2D numpy array with size of M x M, where M is the number of antennas in the antenna system
+      
+  """
+  M, N = X.shape[0], X.shape[1]
+  R = (X @ X.conj().T) / N #(M x M)
+  if fba:
+     J = np.flipud(np.eye(M))
+     R = 0.5*(R+J @ (R.conj().T) @ J)
+  return R
+ 

@@ -46,7 +46,7 @@ def demo_six():
 
     # R matrix calculation
     # outside lib methds to allow different ways of calculating and augmenting
-    R = (tx_signal @ tx_signal.conj().T)/tx_signal.shape[1]
+    R = cov(tx_signal)
 
     # Generate steering vectors
     ula_st_vectors = ula_scan_steering_matrix(M,d,angular_resolution=1)
