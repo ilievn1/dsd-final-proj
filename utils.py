@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 def ula_steering_matrix(num_elements:int, element_spacing:float, thetas_rad: list[float]):
     """
@@ -47,33 +48,45 @@ def ula_scan_steering_matrix(num_elements:int, element_spacing:float, angular_re
     return ula_steering_matrix(M,d,scan_thetas_rad)
 
 
-def DOA_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
+def DOA_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True,save_fig=False, fig_name=None):
     """
     This plotting function takes in a number of spectrums from various methods (e.g. CAPON and MUSIC) and linearly plots DOA estimates and actual DOAs
         
     Parameters:
         :param spectra_data ([np.ndarray]): an array of one or more spectrums used for DOA estimations. (S x P) where S is number of spectra and P the number of samples
-        :param estimates ([float]): DOA estimates produced from non-spectral methods(e.g. RMUSIC & ESPRIT); pass [] if none present
+        :param estimates_groups ([np.ndarray]): DOA estimates produced from non-spectral methods(e.g. RMUSIC & ESPRIT); pass [] if none present
         :param inc_angs ([float]): originating angles (in deg) of sources used for validation of estimates
         :param labels ([str]): legend labels to map DOA prediction to algorithm which generated it; order [spectra_data labels, estimates labels]
         :param fullView (bool): True: plot angles b/w [-180,180] degrees, else [-90,90] degrees
         :param log_scale (bool): True: plot spectra y values in dB, else watts
         :param normalize (bool): True: subtract max spectrum y value from all spectrum y values
-        
+        :param save_fig (bool): True: save eps representation of DOA_plot
+        :param fig_name (str): Saved DOA_plot eps figure name
     """    
     # Input check
     if not isinstance(spectra_data,list):
       raise TypeError("spectra_data must be Python list")
+    
+    if not isinstance(estimates_groups,list):
+      raise TypeError("estimates_groups must be Python list")
 
     is_all_1d_arrays = all(isinstance(arr, np.ndarray) and arr.ndim == 1 for arr in spectra_data)
-    
     if not is_all_1d_arrays:
       raise TypeError("spectra_data must contain only numpy 1D arrays")
+
+    is_all_1d_arrays = all(isinstance(arr, np.ndarray) and arr.ndim == 1 for arr in estimates_groups)
+    if not is_all_1d_arrays:
+      raise TypeError("estimates_groups must contain only numpy 1D arrays")
+
+    it = iter(spectra_data)
+    the_len = len(next(it))
+    if not all(len(l) == the_len for l in it):
+        raise ValueError('Spectras must have same length. Use same scanning number of vector / angular res for each spectrum')
 
     if any((ang < -180) or (ang > 180) for ang in inc_angs):
       raise TypeError("Incident angles range is b/w [-180,180] degrees")
 
-    if (len(spectra_data) > 1 or len(estimates) > 1) and (len(spectra_data) + len(estimates)) != len(labels):
+    if (len(spectra_data) > 1 or len(estimates_groups) > 1) and (len(spectra_data) + len(estimates_groups)) != len(labels):
       raise TypeError("Number of spectra_data and labels must be equal")
 
     # Preprocess and format
@@ -105,8 +118,9 @@ def DOA_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_angs:list
         axes.plot(scan_thetas_deg, spectra_data[i,:].squeeze(),label=labels[i])
 
     # Estimates-based
-    for i,ang in enumerate(estimates.shape[0]):
-        axes.axvline(x = ang, label=labels[spectra_data.shape[0] + i])
+    for i,angs in enumerate(estimates_groups):
+        label=labels[S + i]
+        axes.vlines(x = angs, ymin=np.min(spectra_data)*np.ones(len(angs)), ymax=np.max(spectra_data)*np.ones(len(angs)), ls='--', label=label)
 
     # Mark source(s) actual DOAs
     for ang in inc_angs:
@@ -121,8 +135,12 @@ def DOA_plot(spectra_data:list[np.ndarray], estimates:list[float], inc_angs:list
     plt.legend()
     plt.grid()
     plt.show()
-   
-def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True):
+    if save_fig == True:
+        if fig_name == None:
+            fig_name = os.urandom(15).hex()
+        plt.save_fig(f'{fig_name}.eps', format='eps')
+
+def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True,save_fig=False, fig_name=None):
     """
     This plotting function takes in a number of spectrums from various methods (e.g. CAPON and MUSIC) and radially plots DOA estimates and actual DOAs
         
@@ -134,6 +152,8 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarr
         :param fullView (bool): True: plot angles b/w [-180,180] degrees, else [-90,90] degrees
         :param log_scale (bool): True: plot spectra y values in dB, else watts
         :param normalize (bool): True: subtract max spectrum y value from all spectrum y values
+        :param save_fig (bool): True: save eps representation of DOA_plot
+        :param fig_name (str): Saved DOA_plot eps figure name        
     """    
     # Input check
     if not isinstance(spectra_data,list):
@@ -216,7 +236,10 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarr
     plt.legend()
     plt.grid()
     plt.show()
-
+    if save_fig == True:
+        if fig_name == None:
+            fig_name = os.urandom(15).hex()
+        plt.save_fig(f'{fig_name}.eps', format='eps')
 # TODO: steering vec gen dependent on ULA geometry, generalize
 """ 
 TODO: Make possible to add different types of Noise (to be defined e.g. Rician, Laplace, Gauss, Rayleigh)
