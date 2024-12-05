@@ -90,7 +90,8 @@ def DOA_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], i
       raise TypeError("Number of spectra_data and labels must be equal")
 
     # Preprocess and format
-    spectra_data = np.concatenate(spectra_data,axis=0) # (S x P)
+    S = len(spectra_data)
+    spectra_data = np.concatenate(spectra_data,axis=0).reshape(S,-1) # (S x P)    
 
     if(log_scale == True):
       spectra_data = 10*np.log10(spectra_data)
@@ -113,14 +114,18 @@ def DOA_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], i
     fig = plt.figure()
     axes  = fig.add_subplot(111)
 
+    colormap = plt.colormaps['tab10']
+
     # Spectrum-based
     for i in range(spectra_data.shape[0]):
-        axes.plot(scan_thetas_deg, spectra_data[i,:].squeeze(),label=labels[i])
+        color = colormap(i)
+        axes.plot(scan_thetas_deg, spectra_data[i,:].squeeze(), color=color,label=labels[i])
 
     # Estimates-based
     for i,angs in enumerate(estimates_groups):
         label=labels[S + i]
-        axes.vlines(x = angs, ymin=np.min(spectra_data)*np.ones(len(angs)), ymax=np.max(spectra_data)*np.ones(len(angs)), ls='--', label=label)
+        color = colormap(S + i)
+        axes.vlines(x = angs, ymin=np.min(spectra_data)*np.ones(len(angs)), ymax=np.max(spectra_data)*np.ones(len(angs)), ls='--', color=color, label=label)
 
     # Mark source(s) actual DOAs
     for ang in inc_angs:
@@ -204,16 +209,18 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarr
 
     #Plot DOA results
     fig, axes = plt.subplots(subplot_kw={'projection': 'polar'})
-
+    colormap = plt.colormaps['tab10']
     # Spectrum-based
     for i in range(spectra_data.shape[0]):
-        label = labels[i] if i < len(labels) else None
-        axes.plot(np.deg2rad(scan_thetas_deg), spectra_data[i,:].squeeze(),label=label) # MAKE SURE TO USE RADIAN FOR POLAR
+        label = labels[i] if i < len(labels) else None        
+        color = colormap(i)
+        axes.plot(np.deg2rad(scan_thetas_deg), spectra_data[i,:].squeeze(),color=color,label=label) # MAKE SURE TO USE RADIAN FOR POLAR
 
     # Estimates-based
     for i,angs in enumerate(estimates_groups):
-        label=labels[S + i]
-        axes.vlines(x = np.deg2rad(angs), ymin=np.min(spectra_data)*np.ones(len(angs)), ymax=np.max(spectra_data)*np.ones(len(angs)), ls='--', label=label)
+        label=labels[S + i]        
+        color = colormap(S + i)
+        axes.vlines(x = np.deg2rad(angs), ymin=np.min(spectra_data)*np.ones(len(angs)), ymax=np.max(spectra_data)*np.ones(len(angs)), ls='--',color=color, label=label)
 
     # Mark source(s) actual DOAs
     for ang in inc_angs:

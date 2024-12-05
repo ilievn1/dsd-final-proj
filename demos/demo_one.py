@@ -12,7 +12,6 @@ import ESPRIT
 
 def demo_one(M = 4,d = 0.5,N = 100, figName = None):
 
-
     inc_ang_deg = [20, 21]
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
     K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
