@@ -5,16 +5,11 @@ import CaponBeamformer
 import MUSIC
 import RMUSIC
 import ESPRIT
-
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
-# 12          | Sparse array | 2-element ULA, less spatial information, various source spacing and non-uniform SNR, models struggle with resolution
+# 12          | Sparse array | 6-element ULA, less spatial information, various source spacing and non-uniform SNR, models struggle with resolution
 
-def demo_twelve(M = 4,d = 0.5,N = 100, figName = None):        
-    M = 2
-    d = 0.5 # in wavelengths
-    N = 100  # sample size
-    
+def demo_twelve(M = 6,d = 0.5,N = 100, figName = None):        
     inc_ang_deg = [-40,-30,-20, 20, 80]
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
     K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION

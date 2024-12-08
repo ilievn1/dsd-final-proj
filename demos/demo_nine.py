@@ -9,7 +9,7 @@ import ESPRIT
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
 # 9          | Off-grid resolution | 2 sources at -23.7° and 23.3°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN, 1 deg angular scan resolution
-def demo_nine(M = 4,d = 0.5,N = 100, figName = None):        
+def demo_nine(M = 8,d = 0.5,N = 100, figName = None):        
 
     
     inc_ang_deg = [-23.7, 23.3]
@@ -43,7 +43,7 @@ def demo_nine(M = 4,d = 0.5,N = 100, figName = None):
     R = cov(tx_signal)
     
     # Generate steering vectors
-    ula_st_vectors = ula_scan_steering_matrix(M,d,angular_resolution=1)
+    ula_st_vectors = ula_scan_steering_matrix(M,d,angular_resolution=5)
     
     # DOA estimation
     _ ,Bartlett_PAD = BartlettBeamformer.estimate_doa(R, ula_st_vectors, K)

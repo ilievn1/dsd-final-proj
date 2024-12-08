@@ -15,7 +15,7 @@ they overly rely on an accurate noise covariance matrix estimation.
 When noise is negligible, the matrix becomes near-singular / rank-deficient,
 leading to instability in the inverse computation.
 """
-def demo_three(M = 4,d = 0.5,N = 100, figName = None):        
+def demo_three(M = 8,d = 0.5,N = 100, figName = None):        
 
     
     inc_ang_deg = [-20, 20]

@@ -10,7 +10,7 @@ import ESPRIT
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
 # 13         | Complex noise distributions | Noise with mixed Laplacian, Rayleigh, Gaussian, Exponential, etc., across channels
-def demo_thirteen(M = 4,d = 0.5,N = 100, figName = None):        
+def demo_thirteen(M = 8,d = 0.5,N = 100, figName = None):        
     M = 6
     d = 0.5 # in wavelengths
     N = 100  # sample size

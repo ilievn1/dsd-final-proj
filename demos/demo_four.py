@@ -10,9 +10,7 @@ import ESPRIT
 # ----------------------------------------------
 # 4          | Unequal sig powers | 2 sources at -20° and 20°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN
 
-def demo_four(M = 4,d = 0.5,N = 100, figName = None):        
-
-    
+def demo_four(M = 8,d = 0.5,N = 100, figName = None):        
     inc_ang_deg = [-20, 20]
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
     K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION

@@ -10,7 +10,7 @@ import ESPRIT
 # ----------------------------------------------
 # 1          | Close angular spacing | 2 sources at 20° and 21°, SNR=20dB, AWGN
 
-def demo_one(M = 4,d = 0.5,N = 100, figName = None):
+def demo_one(M = 8,d = 0.5,N = 100, figName = None):
 
     inc_ang_deg = [20, 21]
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal

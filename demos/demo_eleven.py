@@ -8,11 +8,9 @@ import ESPRIT
 
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
-# 11         | Multipath coherency | 1 source at -20°, reflection at 20°,  SNR_1 is 15dB, SNR_2 is -15dB, AWGN
+# 11         | Multipath coherency | 1 source at -20°, reflection at 20°,  SNR_1 is 0dB, SNR_2 is -5dB, AWGN
 
-def demo_eleven(M = 4,d = 0.5,N = 100, figName = None):        
-
-
+def demo_eleven(M = 8,d = 0.5,N = 100, figName = None):        
     inc_ang_deg = [-20]
     thetas_deg=np.array(inc_ang_deg + [20]).reshape(1,-1)   # (1 x K) Incident angles of test signal
     K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
@@ -24,7 +22,7 @@ def demo_eleven(M = 4,d = 0.5,N = 100, figName = None):
     soi = np.repeat(soi,K,axis=0)
 
     # Augment generated signals with the given SNR
-    snr = np.asarray([15,-15]) # (K,)
+    snr = np.asarray([0,-5]) # (K,)
     power = np.sqrt(10**(snr / 10)) 
     power = np.diag(power) # (K x K)
 

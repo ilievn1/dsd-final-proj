@@ -9,7 +9,7 @@ import ESPRIT
 # Scenario # | Description | Key Modifications
 # ----------------------------------------------
 # 10          | Reduced number of samples | 10 samples instead of 100, 2 sources at -20° and 20°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN
-def demo_ten(M = 4,d = 0.5,N = 100, figName = None):        
+def demo_ten(M = 8,d = 0.5,N = 100, figName = None):        
     M = 4
     d = 0.5 # in wavelengths
     N = 20  # sample size

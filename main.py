@@ -30,4 +30,4 @@ from demos import *
 # - Complex noise distributions
 # - Multipath or harmonics
 
-demo_one(M = 4,d = 0.5,N = 100, figName = "demo_one")
+demo_one(M = 8,d = 0.5,N = 100, figName = "demo_one")

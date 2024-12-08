@@ -10,9 +10,7 @@ import ESPRIT
 # ----------------------------------------------
 # 8          | Correlated noise | 2 sources at -20° and 20°, SNR_1 is 15dB, SNR_1 is -15dB, AWGN highly correlated
 
-def demo_eight(M = 4,d = 0.5,N = 100, figName = None):    
-
-
+def demo_eight(M = 8,d = 0.5,N = 100, figName = None):    
     inc_ang_deg = [-20, 20]
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
     K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
@@ -32,16 +30,15 @@ def demo_eight(M = 4,d = 0.5,N = 100, figName = None):
 
     steered_soi_matrix = A @ soi # (M x K) @ (K x N) = (M x N)
 
+
     # Generate multichannel correlated noise
     noise = np.random.randn(M,N) + 1j*np.random.randn(M,N)
-
-    correlation_matrix = np.array([[1, 0.75, 0.75, 0.75],
-                                   [0.75, 1, 0.75, 0.75],
-                                   [0.75, 0.75, 1, 0.75],
-                                   [0.75, 0.75, 0.75, 1]])  # High correlation
-    noise = np.linalg.cholesky(correlation_matrix).dot(noise)
-
     noise = 0.5 * noise # split between Re and Im components.
+
+    correlation_matrix = np.random.uniform(low=0.75, high=0.9, size=(M,M))  # High correlation
+    np.fill_diagonal(correlation_matrix, 1)  # Set diagonal elements to 1
+
+    noise = np.linalg.cholesky(correlation_matrix).dot(noise)
 
     # Create received signal
     tx_signal = steered_soi_matrix + noise
