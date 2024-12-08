@@ -7,7 +7,7 @@ import MUSIC
 import RMUSIC
 import ESPRIT
 
-def rmse_var_snr(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], T = 100, save_fig=True, fig_name='rmse_snr_demo'):
+def rmse_var_snr(M = 8,d = 0.5,N = 100, inc_ang_deg = [18, 25], T = 100, save_fig=True, fig_name='rmse_snr_demo'):
     num_trials = T
 
     thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
@@ -23,7 +23,7 @@ def rmse_var_snr(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], T = 100, save_fi
     ula_st_vectors = ula_scan_steering_matrix(M, d, angular_resolution=1)  # (M x P)
 
     # RMSE storage
-    rmse_matrix = np.zeros((5,len(SNRs)),dtype=np.complex_) # 4 + 1 = num of estimator, currently CBF,MVDR,MUSIC,RMUSIC + CRLB
+    rmse_matrix = np.zeros((6,len(SNRs)),dtype=np.complex_) # 5 + 1 = num of estimator, currently CBF,MVDR,MUSIC,RMUSIC,ESPRIT + CRLB
 
     # Monte Carlo trials using matrix operations
     for i, snr in enumerate(SNRs):
@@ -55,6 +55,9 @@ def rmse_var_snr(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], T = 100, save_fi
         # ROOTMUSIC
         estimated_angs, _ = RMUSIC.estimate_doa(R, ula_st_vectors, K)
         rmse_matrix[3,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
+        # ESPRIT
+        estimated_angs, _ = ESPRIT.estimate_doa(R, ula_st_vectors, K)
+        rmse_matrix[4,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
 
         # CRLB
         # Formula: P. Stoica, A. Nehorai "MUSIC, Maximum Likelihood, and Cramer-Rao Bound"
@@ -65,7 +68,7 @@ def rmse_var_snr(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], T = 100, save_fi
 
         var_crlb = (1/(2*N*snr_linear)) / np.diag(h) # (K,) diag extracts i-th est for i-th true inc angle
 
-        rmse_matrix[4, i] += np.sqrt(np.mean(var_crlb))
+        rmse_matrix[5, i] += np.sqrt(np.mean(var_crlb))
 
     rmse_matrix /= num_trials  # Average over trials
 
@@ -75,9 +78,10 @@ def rmse_var_snr(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], T = 100, save_fi
     plt.plot(SNRs, rmse_matrix[1,:], "o:g", label="Capon")
     plt.plot(SNRs, rmse_matrix[2,:], "d:b", label="MUSIC")
     plt.plot(SNRs, rmse_matrix[3,:], "x:m", label="ROOT")
-    plt.plot(SNRs, rmse_matrix[4,:], "-k", label="CRLB")
+    plt.plot(SNRs, rmse_matrix[4,:], "*:", label="ESPRIT")
+    plt.plot(SNRs, rmse_matrix[5,:], "-k", label="CRLB")
     plt.title(f"RMSE as a Function of SNR")
-    plt.suptitle(f"Uncorrelated M={M}, d={d}, inc_thetas={inc_ang_deg}, ss_size={N}")
+    plt.suptitle(f"Uncorrelated M={M}, d={d}, inc_thetas={inc_ang_deg}, ss_size={N}, , MC Trials = {num_trials}")
     plt.xlabel("SNR (dB)")
     plt.ylabel("RMSE (Degrees)")
     plt.grid()
@@ -86,4 +90,4 @@ def rmse_var_snr(M = 4,d = 0.5,N = 100, inc_ang_deg = [20, 23], T = 100, save_fi
     if save_fig == True:
         if fig_name == None:
             fig_name = os.urandom(15).hex()
-        plt.save_fig(f'{fig_name}.eps', format='eps')
+        plt.savefig(f'{fig_name}.eps', format='eps')

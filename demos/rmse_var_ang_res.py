@@ -7,20 +7,20 @@ import MUSIC
 import RMUSIC
 import ESPRIT
 
-def rmse_var_ang_res(M = 4,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fig_name='rmse_ang_res_demo'):
+def rmse_var_ang_res(M = 8,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fig_name='rmse_ang_res_demo'):
     num_trials = T
     
     snr_linear = 10 ** (snr / 10)  # SNR in linear scale
     noise_power = 1 / snr_linear
     
-    ang_separations = np.arange(0, 30, 0.1) # in deg
+    ang_separations = np.arange(0, 20 + 0.1, 0.1) # in deg
     
     # RMSE storage
-    rmse_matrix = np.zeros((5,len(ang_separations)),dtype=np.complex_) # 4 + 1 = num of estimator, currently CBF,MVDR,MUSIC,RMUSIC + CRLB
+    rmse_matrix = np.zeros((6,len(ang_separations)),dtype=np.complex_) # 5 + 1 = num of estimator, currently CBF,MVDR,MUSIC,RMUSIC,ESPRIT + CRLB
     
     # Monte Carlo trials using matrix operations
     for i, sep in enumerate(ang_separations):
-      inc_ang_deg = [20, 20 + sep]
+      inc_ang_deg = [18, 18 + sep]
       thetas_deg=np.array(inc_ang_deg).reshape(1,-1)   # (1 x K) Incident angles of test signal
       K = thetas_deg.shape[1] # K MUST BE < M - 1 FOR CORRECT DETECTION
       thetas_rad = np.deg2rad(thetas_deg)
@@ -54,6 +54,9 @@ def rmse_var_ang_res(M = 4,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fi
         # ROOTMUSIC
         estimated_angs, _ = RMUSIC.estimate_doa(R, ula_st_vectors, K)
         rmse_matrix[3,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
+        # ESPRIT
+        estimated_angs, _ = ESPRIT.estimate_doa(R, ula_st_vectors, K)
+        rmse_matrix[4,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
         
         # CRLB
         # Formula: P. Stoica, A. Nehorai "MUSIC, Maximum Likelihood, and Cramer-Rao Bound"
@@ -64,7 +67,7 @@ def rmse_var_ang_res(M = 4,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fi
         
         var_crlb = (1/(2*N*snr_linear)) / np.diag(h) # (K,) diag extracts i-th est for i-th true inc angle
         
-        rmse_matrix[4, i] += np.sqrt(np.mean(var_crlb))
+        rmse_matrix[5, i] += np.sqrt(np.mean(var_crlb))
     
     rmse_matrix /= num_trials  # Average over trials
 
@@ -74,10 +77,11 @@ def rmse_var_ang_res(M = 4,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fi
     plt.plot(ang_separations, rmse_matrix[1,:], "o:g", label="Capon")
     plt.plot(ang_separations, rmse_matrix[2,:], "d:b", label="MUSIC")
     plt.plot(ang_separations, rmse_matrix[3,:], "x:m", label="ROOT")
-    plt.plot(ang_separations, rmse_matrix[4,:], "-k", label="CRLB")
+    plt.plot(ang_separations, rmse_matrix[4,:], "*:", label="ESPRIT")
+    plt.plot(ang_separations, rmse_matrix[5,:], "-k", label="CRLB")
     
     plt.title(f"RMSE as a Function of angular separation")
-    plt.suptitle(f"Uncorrelated M={M}, d={d}, equal SNR = {snr} dB, ss_size={N}")
+    plt.suptitle(f"Uncorrelated M={M}, d={d}, equal SNR = {snr} dB, ss_size={N}, MC Trials = {num_trials}")
     plt.xlabel("Angular separation (in deg)")
     plt.ylabel("RMSE (Degrees)")
     plt.grid()
@@ -86,4 +90,4 @@ def rmse_var_ang_res(M = 4,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fi
     if save_fig == True:
         if fig_name == None:
             fig_name = os.urandom(15).hex()
-        plt.save_fig(f'{fig_name}.eps', format='eps')
+        plt.savefig(f'{fig_name}.eps', format='eps')
