@@ -44,16 +44,16 @@ def rmse_var_ang_res(M = 4,d = 0.5,N = 100, snr = 10, T = 100, save_fig=True, fi
 
         # Bartlett
         estimated_angs, _ = BartlettBeamformer.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[0,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[0,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
         # Capon
         estimated_angs, _ = CaponBeamformer.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[1,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[1,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
         # MUSIC
         estimated_angs, _ = MUSIC.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[2,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[2,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
         # ROOTMUSIC
         estimated_angs, _ = RMUSIC.estimate_doa(R, ula_st_vectors, K)
-        rmse_matrix[3,i] += np.sqrt(np.mean((inc_ang_deg - estimated_angs) ** 2))
+        rmse_matrix[3,i] += np.sqrt(np.mean((thetas_deg - estimated_angs) ** 2))
         
         # CRLB
         # Formula: P. Stoica, A. Nehorai "MUSIC, Maximum Likelihood, and Cramer-Rao Bound"

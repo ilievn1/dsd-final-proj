@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 import matplotlib.pyplot as plt
 
-from abc import ABC, abstractmethod
 class DOAEstimator(ABC):
     """
     Abstract base class for DOA estimation algorithms.
@@ -44,7 +43,6 @@ class DOAEstimator(ABC):
             :return spectrum: spectrum (e.g. angular distribution of pwr or noise subspace orthogonality)
             :rtype spectrum: 1D ndarray (P,)
         """
-        print(f'Inside @classmethod calculate_spectrum with cls ${cls}')
         # --> Input check
         if R.shape[0] != R.shape[1]:
             raise TypeError("Covariance matrix is not square")
@@ -71,10 +69,9 @@ class DOAEstimator(ABC):
         Return values:
             :return DOA: DOA estimates (in deg)
             :return spectrum: spectrum (e.g. angular distribution of pwr or noise subspace orthogonality)
-            :rtype DOA: [float]
+            :rtype DOA: 1D ndarray (K,)
             :rtype spectrum: 1D ndarray (P,)
         """
-        print(f'Inside @classmethod estimate_doa with cls ${cls}')
         # --> Input check
         if R.shape[0] != R.shape[1]:
             raise TypeError("Covariance matrix is not square")

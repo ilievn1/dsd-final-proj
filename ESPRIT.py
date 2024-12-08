@@ -65,6 +65,7 @@ class ESPRIT(DOAEstimator):
         # TODO: Here 0.5 = d is magic number, when DOA ABC is fully implemented, d should be accesible thru parent ABC
 
         estimated_DOAs = np.arcsin(1/(d_sub)*1/(2*np.pi*0.5)*np.angle(Phi))
-        estimated_DOAs = np.rad2deg(estimated_DOAs).tolist()
+        estimated_DOAs = np.rad2deg(estimated_DOAs)
+        estimated_DOAs = np.sort(estimated_DOAs)
 
         return estimated_DOAs, None
