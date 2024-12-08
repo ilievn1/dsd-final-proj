@@ -86,8 +86,8 @@ def rmse_var_snr(M = 8,d = 0.5,N = 100, inc_ang_deg = [18, 25], T = 100, save_fi
     plt.ylabel("RMSE (Degrees)")
     plt.grid()
     plt.legend()
-    plt.show()
     if save_fig == True:
         if fig_name == None:
             fig_name = os.urandom(15).hex()
         plt.savefig(f'{fig_name}.eps', format='eps')
+    plt.show()

@@ -139,11 +139,11 @@ def DOA_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], i
 
     plt.legend()
     plt.grid()
-    plt.show()
     if save_fig == True:
         if fig_name == None:
             fig_name = os.urandom(15).hex()
         plt.savefig(f'{fig_name}.eps', format='eps')
+    plt.show()
 
 def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarray], inc_angs:list[float], labels:list[str]=[], fullView=False, log_scale=True, normalize=True,save_fig=False, fig_name=None):
     """
@@ -242,11 +242,11 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarr
 
     plt.legend()
     plt.grid()
-    plt.show()
     if save_fig == True:
         if fig_name == None:
             fig_name = os.urandom(15).hex()
         plt.savefig(f'{fig_name}.eps', format='eps')
+    plt.show()
 # TODO: steering vec gen dependent on ULA geometry, generalize
 """ 
 TODO: Make possible to add different types of Noise (to be defined e.g. Rician, Laplace, Gauss, Rayleigh)

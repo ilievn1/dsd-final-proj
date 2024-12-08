@@ -114,8 +114,8 @@ def rmse_var_ss_size(M = 8,d = 0.5, inc_ang_deg = [18, 25], snr = 10, T = 100, s
     plt.ylabel("RMSE (Degrees)")
     plt.grid()
     plt.legend()
-    plt.show()
     if save_fig == True:
         if fig_name == None:
             fig_name = os.urandom(15).hex()
         plt.savefig(f'{fig_name}.eps', format='eps')
+    plt.show()
