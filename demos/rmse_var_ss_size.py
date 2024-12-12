@@ -72,7 +72,8 @@ def rmse_var_ss_size(M = 8,d = 0.5, inc_ang_deg = [18, 25], snr = 10, T = 100, s
         """
         # Small N formula CRLB
         # Formula: P. Stoica, A. Nehorai "MUSIC, Maximum Likelihood, and Cramer-Rao Bound"
-        # Sec. IV Eq. 4.1        
+        # Sec. IV Eq. 4.1
+        da_dth = (A.T * 1j*np.arange(M)).T # (M,) * (M x K) || Hadamard prod w/o repeating d along all K cols        
         D = da_dth # (M x K)
         Pi_orth = (np.eye(M) - A @ np.linalg.inv( A.conj().T @ A) @ A.conj().T) # (M x M)
         X = np.eye(K)[None, :, :] * soi.T[:, :, None] # (ss_size x K x K)

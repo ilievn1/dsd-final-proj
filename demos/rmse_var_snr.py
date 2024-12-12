@@ -37,10 +37,10 @@ def rmse_var_snr(M = 8,d = 0.5,N = 100, inc_ang_deg = [18, 25], T = 100, save_fi
         noise = (np.random.randn(M, N) + 1j * np.random.randn(M, N)) * np.sqrt(noise_power / 2)
 
         steered_soi_matrix =  A @ soi  # (M x N)
-        tx_signal = steered_soi_matrix + noise  # (M x N x num_trials)
+        tx_signal = steered_soi_matrix + noise  # (M x N)
 
         # Covariance matrix estimation
-        # R = np.einsum('imt,jmt->ijt', tx_signal, np.conj(tx_signal)) / N # (M x M x num_trials)
+        # R = np.einsum('imt,jmt->ijt', tx_signal, np.conj(tx_signal)) / N # (num_trials x M x M)
         R = cov(tx_signal)
 
         # Bartlett
@@ -69,7 +69,17 @@ def rmse_var_snr(M = 8,d = 0.5,N = 100, inc_ang_deg = [18, 25], T = 100, save_fi
         var_crlb = (1/(2*N*snr_linear)) / np.diag(h) # (K,) diag extracts i-th est for i-th true inc angle
 
         rmse_matrix[5, i] += np.sqrt(np.mean(var_crlb))
-
+        """
+         # Formula: P. Stoica, R. Moses, "SPECTRAL ANALYSIS OF SIGNALS", Appendix B Eq. B.6.33
+        da_dth = (A.T * 1j*np.arange(M)).T # (M,) * (M x K) || Hadamard prod w/o repeating d along all K cols
+        D = da_dth # (M x K)
+        Pi_A_orth = (np.eye(M) - A @ np.linalg.inv( A.conj().T @ A) @ A.conj().T) # (M x M)
+        P = np.eye(K)
+        R_inv = scipy.linalg.solve(R, np.eye(M))
+        var_crlb = (D.conj().T @ Pi_A_orth @ D) * (P @ A.conj().T @ R_inv @ A @ P).T
+        var_crlb = (noise_power / (2*N)) * np.reciprocal (np.real(var_crlb))   
+        var_crlb = np.diag(var_crlb)
+        """
     rmse_matrix /= num_trials  # Average over trials
 
     # Plot RMSE as a function of SNR
