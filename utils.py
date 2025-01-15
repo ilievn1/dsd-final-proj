@@ -247,6 +247,8 @@ def DOA_polar_plot(spectra_data:list[np.ndarray], estimates_groups:list[np.ndarr
             fig_name = os.urandom(15).hex()
         plt.savefig(f'{fig_name}.eps', format='eps')
     plt.show()
+# TODO: Spatial smoothing demos
+
 # TODO: steering vec gen dependent on ULA geometry, generalize
 """ 
 TODO: Make possible to add different types of Noise (to be defined e.g. Rician, Laplace, Gauss, Rayleigh)
@@ -366,3 +368,61 @@ def cov(X,fba=False):
      R = 0.5*(R+J @ (R.conj().T) @ J)
   return R
  
+
+def spatial_smoothing(R, subarray_length, weights=None):
+    """
+    Perform spatial smoothing on the given covariance matrix.
+
+    Parameters:
+    ------------
+    R : np.ndarray
+        The input spatial covariance matrix of shape (M, M), where M is the number of array elements.
+
+    subarray_length : int
+        The length of each sub-array (L).
+
+    weights : np.ndarray, optional
+        A diagonal weighting matrix of shape (num_subarrays, num_subarrays). If None, uniform weighting is used.
+
+    Returns:
+    --------
+    np.ndarray
+        The spatially smoothed covariance matrix of shape (L, L).
+    """
+
+    # --input check--
+    M = np.size(R, 0)  # Number of antenna elements
+    L = subarray_length
+    J =num_subarrays = M - L + 1
+
+    if subarray_length + num_subarrays - 1 != M:
+        raise ValueError("The subarray length and number of subarrays must satisfy L + J - 1 = M.")
+
+    # Default to uniform weighting if no weights are provided
+    if weights is None:
+        weights = np.eye(num_subarrays)
+
+    # Validate weights
+    if weights.shape != (num_subarrays, num_subarrays):
+        raise ValueError("Weights must be a diagonal matrix of shape (num_subarrays, num_subarrays).")
+
+    # Initialize the smoothed covariance matrix
+    smoothed_cov = np.zeros((L, L), dtype=np.complex128)
+
+    # Construct sub-array selection matrices
+    for j in range(J):
+        # Selection matrix for the j-th subarray
+        S_j = np.zeros((L, M))
+        for i in range(L):
+            S_j[i, i + j] = 1
+
+        # Sub-array covariance contribution
+        R_j = S_j @ R @ S_j.T.conj()
+
+        # Weight and accumulate
+        smoothed_cov += weights[j, j] * R_j
+
+    # Normalize by the number of subarrays
+    smoothed_cov /= J
+
+    return smoothed_cov
